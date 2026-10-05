@@ -154,23 +154,41 @@ export function getNextCycleTime(
 	months: number,
 	specifiedDate: number,
 ): number {
-	const start = dayjs(startDate);
-	const checkDate = dayjs(specifiedDate);
-
-	if (!start.isValid() || months <= 0) {
+	const anchor = new Date(startDate);
+	const check = new Date(specifiedDate);
+	if (
+		!Number.isFinite(startDate) ||
+		!Number.isFinite(specifiedDate) ||
+		!Number.isInteger(months) ||
+		months <= 0 ||
+		!Number.isFinite(anchor.getTime()) ||
+		!Number.isFinite(check.getTime())
+	) {
 		throw new Error("参数无效：请检查起始日期、周期月份数和指定日期。");
 	}
-
-	let nextDate = start;
-
-	// 循环增加周期直到大于当前日期
-	let whileStatus = true;
-	while (whileStatus) {
-		nextDate = nextDate.add(months, "month");
-		whileStatus = nextDate.valueOf() <= checkDate.valueOf();
-	}
-
-	return nextDate.valueOf(); // 返回时间毫秒数
+	const monthDiff =
+		(check.getUTCFullYear() - anchor.getUTCFullYear()) * 12 +
+		check.getUTCMonth() -
+		anchor.getUTCMonth();
+	let cycles = Math.max(1, Math.floor(monthDiff / months));
+	const occurrence = (n: number) => {
+		const month = anchor.getUTCMonth() + n * months;
+		const lastDay = new Date(
+			Date.UTC(anchor.getUTCFullYear(), month + 1, 0),
+		).getUTCDate();
+		return Date.UTC(
+			anchor.getUTCFullYear(),
+			month,
+			Math.min(anchor.getUTCDate(), lastDay),
+			anchor.getUTCHours(),
+			anchor.getUTCMinutes(),
+			anchor.getUTCSeconds(),
+			anchor.getUTCMilliseconds(),
+		);
+	};
+	let next = occurrence(cycles);
+	while (next <= specifiedDate) next = occurrence(++cycles);
+	return next;
 }
 
 export function getDaysBetweenDates(date1: string, date2: string): number {
@@ -342,4 +360,26 @@ export function handlePublicNote(serverId: number, publicNote: string): string {
 	}
 
 	return "";
+}
+
+export function formatBillingCycle(cycle: string): string {
+	const labels: Record<string, string> = {
+		m: "月",
+		mo: "月",
+		month: "月",
+		monthly: "月",
+		y: "年",
+		yr: "年",
+		year: "年",
+		annual: "年",
+		q: "季",
+		qr: "季",
+		quarterly: "季",
+		h: "半年",
+		half: "半年",
+		"semi-annually": "半年",
+	};
+	return Object.keys(labels).includes(cycle.toLowerCase())
+		? labels[cycle.toLowerCase()]
+		: cycle;
 }

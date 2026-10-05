@@ -14,9 +14,10 @@ export function AnimateCountClient({
 
 	useEffect(() => {
 		if (count !== previousCount) {
-			setTimeout(() => {
+			const timer = setTimeout(() => {
 				setPreviousCount(count);
 			}, 300);
+			return () => clearTimeout(timer);
 		}
 	}, [count, previousCount]);
 	return (

@@ -1,5 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { WebSocketContext } from "@/context/websocket-context";
 import CarrierStatus from "@/components/CarrierStatus";
 import { CarrierProvider } from "@/context/carrier-provider";
 import { renderWithProviders } from "@/test/utils";
@@ -47,6 +48,28 @@ function mockProbes({ stale = false, unknown = false, fail = false } = {}) {
 	);
 }
 describe("carrier packet measurements", () => {
+	it("hides recent probe results when the node disappears from live state", async () => {
+		mockProbes();
+		renderWithProviders(
+			<WebSocketContext.Provider
+				value={{
+					lastData: { now: Date.now(), servers: [] },
+					connected: true,
+					messageHistory: [],
+					reconnect: () => {},
+					needReconnect: false,
+					setNeedReconnect: () => {},
+				}}
+			>
+				<CarrierProvider>
+					<CarrierStatus serverId={1} />
+				</CarrierProvider>
+			</WebSocketContext.Provider>,
+		);
+		await waitFor(() => expect(fetch).toHaveBeenCalledTimes(4));
+		expect(screen.queryByText("21 ms")).not.toBeInTheDocument();
+		expect(screen.getAllByText("—")).toHaveLength(6);
+	});
 	it("shares one fetch batch across nodes and never reuses another node's measurements", async () => {
 		mockProbes();
 		renderWithProviders(

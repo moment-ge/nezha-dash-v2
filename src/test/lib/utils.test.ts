@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	fetcher,
+	formatBillingCycle,
 	formatNezhaInfo,
 	formatRelativeTime,
 	formatTime,
@@ -53,6 +54,24 @@ const serverFixture: NezhaServer = {
 };
 
 describe("date and billing helpers", () => {
+	it("keeps month-end renewals anchored across February and time zones", () => {
+		expect(
+			new Date(
+				getNextCycleTime(Date.UTC(2025, 0, 31), 1, Date.UTC(2025, 2, 1)),
+			).toISOString(),
+		).toBe("2025-03-31T00:00:00.000Z");
+		expect(
+			new Date(
+				getNextCycleTime(Date.UTC(2024, 0, 31), 1, Date.UTC(2024, 1, 1)),
+			).toISOString(),
+		).toBe("2024-02-29T00:00:00.000Z");
+		expect(() => getNextCycleTime(Date.UTC(2025, 0, 1), 1, NaN)).toThrow();
+	});
+	it("translates official admin billing cycle values", () => {
+		expect(formatBillingCycle("Month")).toBe("月");
+		expect(formatBillingCycle("Year")).toBe("年");
+		expect(formatBillingCycle("自定义")).toBe("自定义");
+	});
 	beforeEach(() => {
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2025-01-15T00:00:00.000Z"));

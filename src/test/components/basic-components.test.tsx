@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import AnimateCountClient, { AnimateCount } from "@/components/AnimatedCount";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import ChartSkeleton from "@/components/loading/ChartSkeleton";
@@ -34,6 +34,14 @@ function StatusReadout() {
 }
 
 describe("basic display components", () => {
+	it("cancels a pending count update on unmount", () => {
+		vi.useFakeTimers();
+		const { rerender, unmount } = render(<AnimateCountClient count={1} />);
+		rerender(<AnimateCountClient count={2} />);
+		expect(vi.getTimerCount()).toBe(1);
+		unmount();
+		expect(vi.getTimerCount()).toBe(0);
+	});
 	it("renders animated counts with padded digits", () => {
 		render(<AnimateCount minDigits={3}>{7}</AnimateCount>);
 

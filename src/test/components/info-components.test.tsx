@@ -80,7 +80,7 @@ describe("PlanInfo and BillingInfo", () => {
 		);
 
 		expect(
-			screen.getByText("billingInfo.price: 10/monthly"),
+			screen.getByText("billingInfo.price: 10/月"),
 		).toBeInTheDocument();
 		expect(screen.getByText(/billingInfo.remaining: 16/)).toBeInTheDocument();
 		expect(screen.getByRole("progressbar")).toBeInTheDocument();

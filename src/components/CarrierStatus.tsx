@@ -1,3 +1,5 @@
+import { useWebSocketContext } from "@/hooks/use-websocket-context";
+import { nodeIsOnline } from "@/lib/server-location";
 import { useContext } from "react";
 import { CarrierContext } from "@/context/carrier-provider";
 
@@ -9,6 +11,12 @@ export default function CarrierStatus({
 	online?: boolean;
 }) {
 	const { carriers, queries } = useContext(CarrierContext);
+	const { lastData, connected } = useWebSocketContext();
+	const server = lastData?.servers.find((s) => s.id === serverId);
+	const nodeOnline =
+		online &&
+		(!lastData ||
+			(connected && !!server && nodeIsOnline(lastData.now, server)));
 	return (
 		<section
 			className="w-full min-w-0 rounded-lg border bg-muted/30 p-3 text-xs"
@@ -24,7 +32,7 @@ export default function CarrierStatus({
 						(p) => p.server_id === serverId,
 					);
 					const fresh =
-						online &&
+						nodeOnline &&
 						!queries[i].isError &&
 						!!p &&
 						Date.now() - p.checked_at <= 90000 &&
