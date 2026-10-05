@@ -6,6 +6,10 @@ import ErrorPage from "@/pages/ErrorPage";
 import NotFound from "@/pages/NotFound";
 import ServerDetail from "@/pages/ServerDetail";
 
+vi.mock("@/components/CarrierStatus", () => ({
+	default: () => <div>carrier status</div>,
+}));
+
 vi.mock("@/components/NetworkChart", () => ({
 	NetworkChart: ({ server_id, show }: { server_id: number; show: boolean }) => (
 		<div data-testid="network-chart">{`${server_id}:${show}`}</div>

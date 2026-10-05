@@ -52,73 +52,6 @@ interface ResultItem {
 
 const MIN_PERIOD_LOADING_MS = 500;
 
-/**
- * Helper method to calculate packet loss from delay data
- */
-const calculatePacketLoss = (delays: number[]): number[] => {
-	if (!delays || delays.length === 0) return [];
-
-	const packetLossRates: number[] = [];
-	const windowSize = Math.min(10, Math.max(3, Math.floor(delays.length / 10)));
-	const timeoutThreshold = 3000;
-	const extremeDelayThreshold = 10000;
-
-	for (let i = 0; i < delays.length; i++) {
-		const currentDelay = delays[i];
-		let lossRate = 0;
-
-		if (
-			currentDelay === 0 ||
-			currentDelay === null ||
-			currentDelay === undefined
-		) {
-			lossRate = 100;
-		} else if (currentDelay >= extremeDelayThreshold) {
-			lossRate = Math.min(
-				95,
-				60 + (currentDelay - extremeDelayThreshold) / 1000,
-			);
-		} else if (currentDelay >= timeoutThreshold) {
-			lossRate = Math.min(50, (currentDelay - timeoutThreshold) / 200);
-		} else {
-			const start = Math.max(0, i - Math.floor(windowSize / 2));
-			const end = Math.min(delays.length, i + Math.ceil(windowSize / 2));
-			const windowDelays = delays.slice(start, end).filter((d) => d > 0);
-
-			if (windowDelays.length > 2) {
-				const mean =
-					windowDelays.reduce((sum, d) => sum + d, 0) / windowDelays.length;
-				const variance =
-					windowDelays.reduce((sum, d) => sum + (d - mean) ** 2, 0) /
-					windowDelays.length;
-				const standardDeviation = Math.sqrt(variance);
-				const coefficientOfVariation = standardDeviation / mean;
-
-				if (coefficientOfVariation > 0.8) {
-					lossRate = Math.min(25, coefficientOfVariation * 15);
-				} else if (coefficientOfVariation > 0.5) {
-					lossRate = Math.min(10, coefficientOfVariation * 8);
-				} else if (coefficientOfVariation > 0.3) {
-					lossRate = Math.min(5, coefficientOfVariation * 5);
-				}
-
-				if (currentDelay > mean * 2.5) {
-					lossRate += Math.min(15, (currentDelay / mean - 2.5) * 10);
-				}
-			}
-		}
-
-		if (i > 0) {
-			const alpha = 0.3;
-			lossRate = alpha * lossRate + (1 - alpha) * packetLossRates[i - 1];
-		}
-
-		packetLossRates.push(Math.max(0, Math.min(100, lossRate)));
-	}
-
-	return packetLossRates.map((rate) => Number(rate.toFixed(2)));
-};
-
 export function NetworkChart({
 	server_id,
 	show,
@@ -479,7 +412,7 @@ export const NetworkChartClient = React.memo(function NetworkChart({
 			baseData = chartData[selectedChart].map((item) => ({
 				created_at: item.created_at,
 				avg_delay: item.avg_delay,
-				packet_loss: item.packet_loss ?? 0,
+				...(item.packet_loss == null ? {} : { packet_loss: item.packet_loss }),
 			}));
 		}
 
@@ -830,8 +763,8 @@ const transformData = (data: NezhaMonitor[]) => {
 			monitorData[monitorName] = [];
 		}
 
-		// Calculate packet loss from delay data if not provided
-		const packetLoss = item.packet_loss || calculatePacketLoss(item.avg_delay);
+		// Missing measured packet loss stays unknown.
+		const packetLoss = item.packet_loss || [];
 
 		for (let i = 0; i < item.created_at.length; i++) {
 			monitorData[monitorName].push({
@@ -860,8 +793,8 @@ const formatData = (rawData: NezhaMonitor[]) => {
 	rawData.forEach((item) => {
 		const { monitor_name, created_at, avg_delay } = item;
 
-		// Calculate packet loss if not provided
-		const packetLoss = item.packet_loss || calculatePacketLoss(avg_delay);
+		// Never infer packet loss from latency or jitter.
+		const packetLoss = item.packet_loss || [];
 
 		allTimeArray.forEach((time) => {
 			if (!result[time]) {

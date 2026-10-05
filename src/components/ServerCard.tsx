@@ -1,3 +1,4 @@
+import CarrierStatus from "./CarrierStatus";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -215,6 +216,7 @@ function ServerCard({
 					</section>
 				)}
 				{parsedData?.planDataMod && <PlanInfo parsedData={parsedData} />}
+				<CarrierStatus serverId={serverInfo.id} online={online} />
 			</div>
 		</Card>
 	) : (
@@ -277,6 +279,7 @@ function ServerCard({
 				{parsedData?.billingDataMod && <BillingInfo parsedData={parsedData} />}
 			</div>
 			{parsedData?.planDataMod && <PlanInfo parsedData={parsedData} />}
+			<CarrierStatus serverId={serverInfo.id} online={online} />
 		</Card>
 	);
 }
