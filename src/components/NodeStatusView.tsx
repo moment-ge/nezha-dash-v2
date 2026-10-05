@@ -1,8 +1,10 @@
+import StatusHistory, { type ReportingFeed } from "./StatusHistory";
+import "./node-status.css";
 import { Link } from "react-router-dom";
 import { nodeIsOnline, serverLocation } from "@/lib/server-location";
 import { formatBytes } from "@/lib/format";
 import type { NezhaServer } from "@/types/nezha-api";
-import RegionSummary, { regionName } from "./RegionSummary";
+import { regionName } from "./RegionSummary";
 
 export function nodeState(server: NezhaServer, now: number, fresh: boolean) {
 	if (!fresh) return "updating";
@@ -19,28 +21,18 @@ const labels = {
 	pending: "等待上报",
 	updating: "更新中",
 };
-const colors = {
-	online: "bg-emerald-500",
-	offline: "bg-red-500",
-	pending: "bg-slate-400",
-	updating: "bg-amber-500",
-};
-function StateLabel({ state }: { state: keyof typeof labels }) {
+function StatusSymbol({ state }: { state: keyof typeof labels }) {
 	return (
-		<span className="inline-flex shrink-0 items-center gap-2 text-sm font-medium">
-			<span
-				aria-hidden="true"
-				className={`size-2 rounded-full ${colors[state]}`}
-			/>
-			{labels[state]}
+		<span aria-hidden="true" className={`status-symbol status-symbol-${state}`}>
+			{state === "online" ? "✓" : state === "offline" ? "−" : "!"}
 		</span>
 	);
 }
 function Metric({ label, value }: { label: string; value: string }) {
 	return (
-		<div className="rounded-xl border p-4">
-			<dt className="text-sm text-muted-foreground">{label}</dt>
-			<dd className="mt-2 text-xl font-medium tabular-nums">{value}</dd>
+		<div className="status-metric">
+			<dt>{label}</dt>
+			<dd>{value}</dd>
 		</div>
 	);
 }
@@ -49,11 +41,13 @@ export default function NodeStatusView({
 	now,
 	fresh,
 	selectedId,
+	histories = {},
 }: {
 	servers: NezhaServer[];
 	now: number;
 	fresh: boolean;
 	selectedId?: number;
+	histories?: Record<number, ReportingFeed>;
 }) {
 	const selected = servers.find((s) => s.id === selectedId);
 	const visible =
@@ -84,40 +78,44 @@ export default function NodeStatusView({
 	const live = selected && nodeState(selected, now, fresh) === "online";
 	const percent = (used: number, total: number) =>
 		total > 0 ? `${((used / total) * 100).toFixed(1)}%` : "—";
+	const state = healthy
+		? "online"
+		: offline && fresh
+			? "offline"
+			: fresh
+				? "pending"
+				: "updating";
+	const counts = new Map<string, number>();
+	for (const server of visible) {
+		const code = serverLocation(server);
+		if (code) counts.set(code, (counts.get(code) || 0) + 1);
+	}
 	return (
-		<div className="mx-auto w-full max-w-5xl space-y-8 py-4 sm:py-8">
-			<nav aria-label="状态视图导航" className="flex flex-wrap gap-2 text-sm">
-				<Link
-					to="/"
-					className="inline-flex min-h-11 items-center rounded-lg px-4 text-muted-foreground hover:bg-muted focus-visible:ring-2"
-				>
-					监控概览
-				</Link>
-				<Link
-					to="/status"
-					aria-current={selectedId === undefined ? "page" : undefined}
-					className="inline-flex min-h-11 items-center rounded-lg bg-muted px-4 font-medium focus-visible:ring-2"
-				>
+		<div className="status-reference">
+			<header className="status-top">
+				<Link to="/status" className="status-wordmark">
 					节点状态
 				</Link>
-			</nav>
+				<Link to="/" className="status-action">
+					监控概览
+				</Link>
+			</header>
+			{selectedId !== undefined && (
+				<Link to="/status" className="status-back">
+					‹ 全部节点
+				</Link>
+			)}
 			<section
 				aria-label="当前状态"
-				className={`rounded-2xl border p-6 sm:p-8 ${healthy ? "border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30" : offline && fresh ? "border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30" : "bg-muted/40"}`}
+				className={`status-banner ${state === "offline" ? "status-banner-offline" : state !== "online" ? "status-banner-warning" : ""}`}
 			>
-				<div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
-					<span
-						aria-hidden="true"
-						className={`size-2 rounded-full ${healthy ? colors.online : offline && fresh ? colors.offline : colors.updating}`}
-					/>
-					当前节点状态
+				<div className="status-banner-title">
+					<StatusSymbol state={state} />
+					<h1>{title}</h1>
 				</div>
-				<h1 className="break-words text-2xl font-semibold tracking-tight sm:text-3xl">
-					{title}
-				</h1>
-				<p className="mt-3 text-sm leading-6 text-muted-foreground">
+				<p className="status-banner-copy">
 					{!fresh
-						? "监控连接恢复后将自动刷新，暂不判断节点是否离线。"
+						? "正在获取最新监控数据，请稍候。"
 						: !visible.length
 							? "可以返回节点列表查看目前公开的服务器。"
 							: selected
@@ -127,17 +125,67 @@ export default function NodeStatusView({
 								: `${visible.length} 台节点 · ${online} 台在线${offline ? ` · ${offline} 台离线` : ""}`}
 				</p>
 			</section>
-			<RegionSummary servers={visible} />
-			{selected ? (
+			{selectedId === undefined && (
+				<section aria-label="各节点状态" className="status-panel">
+					<div className="status-panel-head">
+						<h2>系统状态</h2>
+						<span className="status-period">最近 24 小时</span>
+					</div>
+					{servers.length ? (
+						servers.map((server) => (
+							<article key={server.id} className="status-node">
+								<div className="status-node-heading">
+									<Link
+										to={`/status/${server.id}`}
+										aria-label={`查看 ${server.name} 的状态`}
+										className="status-node-link"
+									>
+										<StatusSymbol state={nodeState(server, now, fresh)} />
+										<h3>{server.name}</h3>
+										<span className="status-location">
+											{regionName(serverLocation(server))}
+										</span>
+										<span className="status-chevron" aria-hidden="true">
+											›
+										</span>
+									</Link>
+									<span className="status-node-state">
+										{labels[nodeState(server, now, fresh)]}
+									</span>
+								</div>
+								<StatusHistory feed={histories[server.id]} now={now} />
+							</article>
+						))
+					) : (
+						<p className="status-empty">
+							{fresh ? "暂无公开节点" : "正在加载节点…"}
+						</p>
+					)}
+				</section>
+			)}
+			{selected && (
 				<>
-					<section aria-label="节点当前指标" className="space-y-4">
-						<div className="flex flex-wrap items-baseline justify-between gap-2">
-							<h2 className="text-lg font-semibold">当前指标</h2>
-							<span className="text-sm text-muted-foreground">
-								{live ? "随节点上报更新" : "等待实时数据"}
+					<section aria-label="节点上报历史" className="status-panel">
+						<div className="status-panel-head">
+							<h2>上报记录</h2>
+							<span className="status-period">最近 24 小时</span>
+						</div>
+						<div className="status-node">
+							<StatusHistory feed={histories[selected.id]} now={now} />
+						</div>
+					</section>
+					<section
+						aria-label="节点当前指标"
+						className="status-panel"
+						style={{ marginTop: 24 }}
+					>
+						<div className="status-panel-head">
+							<h2>当前指标</h2>
+							<span className="status-period">
+								{live ? "实时更新" : "等待实时数据"}
 							</span>
 						</div>
-						<dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+						<dl className="status-metrics">
 							<Metric
 								label="CPU 使用率"
 								value={live ? `${selected.state.cpu.toFixed(1)}%` : "—"}
@@ -170,7 +218,7 @@ export default function NodeStatusView({
 								}
 							/>
 						</dl>
-						<div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
+						<div className="status-system">
 							<span>
 								{selected.host.platform} {selected.host.platform_version}
 							</span>
@@ -183,65 +231,24 @@ export default function NodeStatusView({
 								{live ? `${formatBytes(selected.state.net_in_speed)}/s` : "—"}
 							</span>
 						</div>
+						<Link to={`/server/${selected.id}`} className="status-details-link">
+							查看详细监控与图表 <span aria-hidden="true"> ↗</span>
+						</Link>
 					</section>
-					<div className="flex flex-wrap gap-3">
-						<Link
-							to={`/server/${selected.id}`}
-							className="inline-flex min-h-11 items-center rounded-lg bg-foreground px-5 text-sm font-medium text-background focus-visible:ring-2"
-						>
-							查看详细监控与图表
-						</Link>
-						<Link
-							to="/status"
-							className="inline-flex min-h-11 items-center rounded-lg border px-5 text-sm focus-visible:ring-2"
-						>
-							全部节点
-						</Link>
-					</div>
 				</>
-			) : (
-				selectedId === undefined && (
-					<section aria-label="各节点状态">
-						<div className="mb-4 flex items-center justify-between">
-							<h2 className="text-lg font-semibold">各节点状态</h2>
-							<span className="text-sm text-muted-foreground">
-								{servers.length} 台节点
-							</span>
-						</div>
-						<div className="divide-y rounded-xl border bg-card">
-							{servers.map((server) => (
-								<article
-									key={server.id}
-									className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 p-5 sm:p-6"
-								>
-									<div className="min-w-0 flex-1">
-										<h3 className="break-words text-base font-medium">
-											{server.name}
-										</h3>
-										<p className="mt-1 text-sm text-muted-foreground">
-											{regionName(serverLocation(server)) ||
-												server.host.platform}
-										</p>
-									</div>
-									<div className="flex items-center gap-4">
-										<StateLabel state={nodeState(server, now, fresh)} />
-										<Link
-											to={`/status/${server.id}`}
-											aria-label={`查看 ${server.name} 的状态`}
-											className="inline-flex min-h-11 items-center gap-2 rounded-lg border px-3 text-sm hover:bg-muted focus-visible:ring-2"
-										>
-											查看状态 <span aria-hidden="true">↗</span>
-										</Link>
-									</div>
-								</article>
-							))}
-						</div>
-					</section>
-				)
 			)}
-			<p className="text-xs leading-5 text-muted-foreground">
-				在线状态依据探针最近上报；具体网络质量可在节点详细监控中查看。
-			</p>
+			{!!counts.size && (
+				<section aria-label="节点分布" className="status-region-summary">
+					{[...counts].map(([code, count]) => (
+						<span key={code}>
+							{regionName(code)} · {count} 台
+						</span>
+					))}
+				</section>
+			)}
+			<footer className="status-footer">
+				在线状态依据探针最近上报。时间条表示各时段是否有上报记录；无记录不等同于故障，也不代表业务可用率。
+			</footer>
 		</div>
 	);
 }
