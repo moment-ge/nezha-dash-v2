@@ -3,7 +3,7 @@ import { ImageMinus } from "lucide-react";
 import { DateTime } from "luxon";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ModeToggle } from "@/components/ThemeSwitcher";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -50,6 +50,7 @@ const useCurrentTime = () => {
 };
 
 function Header() {
+	const { pathname } = useLocation();
 	const { t } = useTranslation();
 	const navigate = useNavigate();
 	const { backgroundImage, updateBackground } = useBackground();
@@ -203,7 +204,7 @@ function Header() {
 				<DashboardLink />
 				<Links />
 			</div>
-			<Overview />
+			{!pathname.startsWith("/status") && <Overview />}
 		</div>
 	);
 }

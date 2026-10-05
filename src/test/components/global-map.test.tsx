@@ -50,15 +50,34 @@ function mapFeature(code: string, name: string) {
 }
 
 describe("GlobalMap", () => {
- it("shows configured Hong Kong when GeoIP is unavailable", () => {
-  renderMap(<GlobalMap now={now} serverList={[createServer({country_code:"",public_note:JSON.stringify({planDataMod:{networkRoute:"香港"}})})]}/>);
-  expect(screen.getByText(/map.Distributions 1 map.Regions/)).toBeInTheDocument();
- });
- it("hides the empty map without showing configuration prompts", () => {
-  renderMap(<GlobalMap now={now} serverList={[createServer({country_code:"",public_note:""})]}/>);
-  expect(screen.queryByText(/地区待设置/)).not.toBeInTheDocument();
-  expect(screen.queryByText(/map.Distributions/)).not.toBeInTheDocument();
- });
+	it("shows configured Hong Kong when GeoIP is unavailable", () => {
+		renderMap(
+			<GlobalMap
+				now={now}
+				serverList={[
+					createServer({
+						country_code: "",
+						public_note: JSON.stringify({
+							planDataMod: { networkRoute: "香港" },
+						}),
+					}),
+				]}
+			/>,
+		);
+		expect(screen.getByText("香港 · 1 台")).toBeInTheDocument();
+	});
+	it("hides the empty map without showing configuration prompts", () => {
+		renderMap(
+			<GlobalMap
+				now={now}
+				serverList={[createServer({ country_code: "", public_note: "" })]}
+			/>,
+		);
+		expect(screen.queryByText(/地区待设置/)).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("region", { name: "节点分布" }),
+		).not.toBeInTheDocument();
+	});
 
 	it("counts unique countries and ignores servers without country codes", () => {
 		Object.assign(window, { CustomBackgroundImage: "/background.png" });
@@ -75,9 +94,7 @@ describe("GlobalMap", () => {
 			/>,
 		);
 
-		expect(
-			screen.getByText(/map\.Distributions 2 map\.Regions/),
-		).toBeInTheDocument();
+		expect(screen.getByText("美国 · 2 台")).toBeInTheDocument();
 		expect(container.querySelector("section")).toHaveClass("bg-card/70");
 	});
 });

@@ -1,8 +1,9 @@
+import { Link } from "react-router-dom";
+import RegionSummary from "@/components/RegionSummary";
 import {
 	ArrowDownIcon,
 	ArrowsUpDownIcon,
 	ArrowUpIcon,
-	ChartBarSquareIcon,
 	MapIcon,
 	ServerStackIcon,
 	ViewColumnsIcon,
@@ -16,12 +17,11 @@ import { Loader } from "@/components/loading/Loader";
 import ServerCard from "@/components/ServerCard";
 import ServerCardInline from "@/components/ServerCardInline";
 import ServerOverview from "@/components/ServerOverview";
-import { ServiceTracker } from "@/components/ServiceTracker";
 import { SORT_TYPES } from "@/context/sort-context";
 import { useSort } from "@/hooks/use-sort";
 import { useStatus } from "@/hooks/use-status";
 import { useWebSocketContext } from "@/hooks/use-websocket-context";
-import { fetchServerGroup, fetchService } from "@/lib/nezha-api";
+import { fetchServerGroup } from "@/lib/nezha-api";
 import { cn } from "@/lib/utils";
 import type { NezhaServer, ServerGroup } from "@/types/nezha-api";
 
@@ -105,20 +105,8 @@ export default function Servers({
 		queryFn: () => fetchServerGroup(),
 		retry: false,
 	});
-	const { data: serviceData, error: serviceError } = useQuery({
-		queryKey: ["service"],
-		queryFn: () => fetchService(),
-		refetchOnMount: true,
-		refetchOnWindowFocus: true,
-		refetchInterval: 10000,
-		retry: false,
-	});
-	const hasServices =
-		!!serviceData?.data?.services &&
-		Object.keys(serviceData.data.services).length > 0;
 	const { lastData, connected } = useWebSocketContext();
 	const { status } = useStatus();
-	const [showServices, setShowServices] = useState<string>("0");
 	const [showMap, setShowMap] = useState<string>("0");
 	const [inline, setInline] = useState<string>("0");
 	const hasRestoredScroll = useRef(false);
@@ -156,21 +144,6 @@ export default function Servers({
 		sessionStorage.setItem("selectedGroup", newGroup);
 		sessionStorage.setItem("scrollPosition", String(window.scrollY || 0));
 	};
-
-	useEffect(() => {
-		const showServicesState = localStorage.getItem("showServices");
-		if (window.ForceShowServices) {
-			setShowServices("1");
-		} else if (showServicesState !== null) {
-			setShowServices(showServicesState);
-		}
-	}, []);
-
-	useEffect(() => {
-		if (!hasServices) {
-			setShowServices("0");
-		}
-	}, [hasServices]);
 
 	useEffect(() => {
 		const checkInlineSettings = () => {
@@ -405,7 +378,7 @@ export default function Servers({
 		status,
 	]);
 
-	const currentBackendError = backendError || groupError || serviceError;
+	const currentBackendError = backendError || groupError;
 
 	if (!nezhaWsData && currentBackendError) {
 		return <BackendErrorState error={currentBackendError} />;
@@ -434,6 +407,17 @@ export default function Servers({
 
 	return (
 		<div className="mx-auto w-full max-w-5xl px-0">
+			<nav aria-label="状态视图导航" className="mb-6 flex gap-2 text-sm">
+				<span className="inline-flex min-h-11 items-center rounded-lg bg-muted px-4 font-medium">
+					监控概览
+				</span>
+				<Link
+					to="/status"
+					className="inline-flex min-h-11 items-center rounded-lg border px-4 hover:bg-muted focus-visible:ring-2"
+				>
+					节点状态 ↗
+				</Link>
+			</nav>
 			<ServerOverview
 				total={totalServers}
 				online={onlineServers}
@@ -465,30 +449,8 @@ export default function Servers({
 						)}
 					>
 						<MapIcon className="size-[13px]" />
+						<span className="sr-only">切换地区地图</span>
 					</button>
-					{hasServices && (
-						<button
-							onClick={() => {
-								setShowServices(showServices === "0" ? "1" : "0");
-								localStorage.setItem(
-									"showServices",
-									showServices === "0" ? "1" : "0",
-								);
-							}}
-							className={cn(
-								"inset-shadow-2xs inset-shadow-white/20 flex cursor-pointer flex-col items-center gap-0 rounded-[50px] bg-blue-100 p-2.5 text-blue-600 transition-all dark:bg-blue-900 dark:text-blue-100",
-								{
-									"inset-shadow-black/20 bg-blue-600 text-white dark:bg-blue-100 dark:text-blue-600":
-										showServices === "1",
-								},
-								{
-									"bg-opacity-70 dark:bg-opacity-70": customBackgroundImage,
-								},
-							)}
-						>
-							<ChartBarSquareIcon className="size-[13px]" />
-						</button>
-					)}
 					<button
 						onClick={() => {
 							setInline(inline === "0" ? "1" : "0");
@@ -506,6 +468,7 @@ export default function Servers({
 						)}
 					>
 						<ViewColumnsIcon className="size-[13px]" />
+						<span className="sr-only">切换节点布局</span>
 					</button>
 					<GroupSwitch
 						tabs={groupTabs}
@@ -572,11 +535,13 @@ export default function Servers({
 					</span>
 				</div>
 			</div>
+			{hasServers && showMap !== "1" && (
+				<div className="mt-6">
+					<RegionSummary servers={nezhaWsData.servers} />
+				</div>
+			)}
 			{hasServers && showMap === "1" && (
 				<GlobalMap now={nezhaWsData.now} serverList={nezhaWsData.servers} />
-			)}
-			{hasServers && showServices === "1" && (
-				<ServiceTracker serverList={filteredServers} />
 			)}
 			{!hasServers ? (
 				<ServerEmptyState />

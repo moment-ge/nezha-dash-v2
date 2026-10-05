@@ -237,7 +237,7 @@ describe("Servers page", () => {
 
 		await waitFor(() => {
 			expect(apiMocks.fetchServerGroup).toHaveBeenCalled();
-			expect(apiMocks.fetchService).toHaveBeenCalled();
+			expect(apiMocks.fetchService).not.toHaveBeenCalled();
 		});
 	});
 
@@ -440,57 +440,21 @@ describe("Servers page", () => {
 		expect(screen.getAllByTestId("server-card")).toHaveLength(2000);
 	});
 
-	it("toggles map and service tracker controls when service data exists", async () => {
-		apiMocks.fetchService.mockResolvedValue({
-			success: true,
-			data: {
-				services: {
-					http: {
-						service_name: "HTTP",
-						current_up: 1,
-						current_down: 0,
-						total_up: 1,
-						total_down: 0,
-						delay: [10],
-						up: [1],
-						down: [0],
-					},
-				},
-				cycle_transfer_stats: {},
-			},
-		});
+	it("uses named map controls and removes the service tracker from the overview", async () => {
 		const user = userEvent.setup();
-		const online = createServer({ id: 1, name: "alpha" });
-		const offline = createServer({
-			id: 2,
-			name: "beta",
-			last_active: "2024-12-31T23:00:00.000Z",
-		});
-
-		const { container } = renderServerPage({
+		localStorage.setItem("showServices", "1");
+		window.ForceShowServices = true;
+		renderServerPage({
 			connected: true,
-			lastData: websocketPayload([online, offline]),
+			lastData: websocketPayload([createServer()]),
 		});
-
-		await waitFor(() => {
-			expect(apiMocks.fetchService).toHaveBeenCalled();
-			expect(
-				container.querySelectorAll(
-					".server-overview-controls section > button",
-				),
-			).toHaveLength(3);
-		});
-
-		const controls = container.querySelectorAll(
-			".server-overview-controls section > button",
+		await user.click(screen.getByRole("button", { name: "切换地区地图" }));
+		expect(screen.getByTestId("global-map")).toBeInTheDocument();
+		expect(screen.queryByTestId("service-tracker")).not.toBeInTheDocument();
+		expect(screen.getByRole("link", { name: "节点状态 ↗" })).toHaveAttribute(
+			"href",
+			"/status",
 		);
-		await user.click(controls[0]);
-		expect(screen.getByTestId("global-map")).toHaveTextContent("2");
-		expect(localStorage.getItem("showMap")).toBe("1");
-
-		await user.click(controls[1]);
-		expect(screen.getByTestId("service-tracker")).toHaveTextContent("2");
-		expect(localStorage.getItem("showServices")).toBe("1");
 	});
 
 	it("does not enable inline cards from storage on mobile widths", () => {

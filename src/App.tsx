@@ -1,3 +1,5 @@
+import { CarrierProvider } from "./context/carrier-provider";
+import NodeStatus from "./pages/NodeStatus";
 import { useQuery } from "@tanstack/react-query";
 import type React from "react";
 import { lazy, Suspense, useEffect, useState } from "react";
@@ -123,10 +125,14 @@ const MainApp: React.FC = () => {
 							path="/server/:id"
 							element={
 								<Suspense fallback={null}>
-									<ServerDetail />
+									<CarrierProvider>
+										<ServerDetail />
+									</CarrierProvider>
 								</Suspense>
 							}
 						/>
+						<Route path="/status" element={<NodeStatus />} />
+						<Route path="/status/:id" element={<NodeStatus />} />
 						<Route path="/error" element={<ErrorPage />} />
 						<Route
 							path="*"

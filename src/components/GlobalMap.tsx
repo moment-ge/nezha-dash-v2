@@ -1,6 +1,5 @@
 import { geoEquirectangular, geoPath } from "d3-geo";
 import { useMemo } from "react";
-import { useTranslation } from "react-i18next";
 import useTooltip from "@/hooks/use-tooltip";
 import { geoJsonString } from "@/lib/geo-json-string";
 import { countryCoordinates } from "@/lib/geo-limit";
@@ -8,6 +7,7 @@ import { serverLocation } from "@/lib/server-location";
 import { cn, formatNezhaInfo } from "@/lib/utils";
 import type { NezhaServer } from "@/types/nezha-api";
 
+import RegionSummary from "./RegionSummary";
 import MapTooltip from "./MapTooltip";
 
 const geoJson = JSON.parse(geoJsonString) as {
@@ -39,7 +39,6 @@ export default function GlobalMap({
 	serverList: NezhaServer[];
 	now: number;
 }) {
-	const { t } = useTranslation();
 	const { countryList, countryServers, serverCounts } = useMemo(() => {
 		const countryList: string[] = [];
 		const countryServers: Record<string, TooltipServer[]> = {};
@@ -80,9 +79,7 @@ export default function GlobalMap({
 				"bg-card/70 rounded-lg  p-4": customBackgroundImage,
 			})}
 		>
-			<p className="text-sm font-medium opacity-40">
-				{t("map.Distributions")} {countryList.length} {t("map.Regions")}
-			</p>
+			<RegionSummary servers={serverList} />
 			<div className="w-full overflow-x-auto">
 				<InteractiveMap
 					countries={countryList}

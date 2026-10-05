@@ -1,4 +1,3 @@
-import CarrierStatus from "./CarrierStatus";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -196,7 +195,6 @@ function ServerCardInline({
 						</div>
 					</section>
 					{parsedData?.planDataMod && <PlanInfo parsedData={parsedData} />}
-					<CarrierStatus serverId={serverInfo.id} online={online} />
 				</div>
 			</Card>
 		</section>
@@ -239,7 +237,6 @@ function ServerCardInline({
 			</section>
 			<Separator orientation="vertical" className="h-8 ml-3 lg:ml-1 mr-3" />
 			{parsedData?.planDataMod && <PlanInfo parsedData={parsedData} />}
-			<CarrierStatus serverId={serverInfo.id} online={online} />
 		</Card>
 	);
 }
