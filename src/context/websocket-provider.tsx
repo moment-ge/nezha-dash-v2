@@ -1,3 +1,4 @@
+import { mergeNodeNotes } from "@/lib/server-location";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { NezhaWebsocketResponse } from "@/types/nezha-api";
@@ -88,6 +89,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 			wsUrl.protocol = wsUrl.protocol.replace("http", "ws");
 
 			ws.current = new WebSocket(wsUrl.toString());
+            const publicNotes = new Map<number, string>();
 
 			ws.current.onopen = () => {
 				console.log("WebSocket connected");
@@ -117,7 +119,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 					}
 
 					const newData = normalizeWebSocketResponse(JSON.parse(event.data));
-					setLastData(newData);
+					newData.servers = mergeNodeNotes(newData.servers, publicNotes);
+                    setLastData(newData);
 					// 更新历史消息，保持最新的30条记录
 					setMessageHistory((prev) => {
 						const updated = [newData, ...prev];

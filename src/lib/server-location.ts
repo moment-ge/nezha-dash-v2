@@ -61,3 +61,16 @@ export function nodeIsOnline(
 		now - last <= 30000
 	);
 }
+
+// Nezha includes public_note in the first frame, then omits it in later frames.
+export function mergeNodeNotes(servers: NezhaServer[], notes: Map<number,string>): NezhaServer[] {
+ const ids=new Set(servers.map(s=>s.id));
+ for(const id of notes.keys()) if(!ids.has(id)) notes.delete(id);
+ return servers.map(server=>{
+  if(typeof server.public_note === "string") {
+   notes.set(server.id,server.public_note);
+   return server;
+  }
+  return {...server,public_note:notes.get(server.id) || ""};
+ });
+}

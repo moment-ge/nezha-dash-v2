@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { nodeIsOnline, serverLocation } from "@/lib/server-location";
+import { createServer } from "@/test/fixtures";
+import { mergeNodeNotes, nodeIsOnline, serverLocation } from "@/lib/server-location";
 
 describe("node regions and heartbeat", () => {
 	it("uses explicit regions ahead of automatic geolocation and route text as a fallback", () => {
@@ -37,4 +38,20 @@ describe("node regions and heartbeat", () => {
 				nodeIsOnline(now, { last_active: new Date(value).toISOString() }),
 			).toBe(false);
 	});
+});
+
+describe("WebSocket note deltas", () => {
+ it("retains first-frame regions separately by node and clears removed or explicitly empty notes", () => {
+  const cache = new Map<number,string>();
+  const hk=createServer({id:1,country_code:"",public_note:JSON.stringify({countryCode:"HK"})});
+  const jp=createServer({id:2,country_code:"",public_note:JSON.stringify({countryCode:"JP"})});
+  mergeNodeNotes([hk,jp],cache);
+  const hkDelta={...hk}; Reflect.deleteProperty(hkDelta,"public_note");
+  const jpDelta={...jp}; Reflect.deleteProperty(jpDelta,"public_note");
+  expect(mergeNodeNotes([hkDelta,jpDelta],cache).map(serverLocation)).toEqual(["HK","JP"]);
+  expect(mergeNodeNotes([{...hk,public_note:""}],cache).map(serverLocation)).toEqual([""]);
+  expect(cache.has(2)).toBe(false);
+  expect(mergeNodeNotes([jpDelta],cache).map(serverLocation)).toEqual([""]);
+  expect(mergeNodeNotes([hkDelta],new Map()).map(serverLocation)).toEqual([""]);
+ });
 });
