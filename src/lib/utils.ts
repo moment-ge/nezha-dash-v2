@@ -2,6 +2,7 @@ import { type ClassValue, clsx } from "clsx";
 import dayjs from "dayjs";
 import { twMerge } from "tailwind-merge";
 import type { NezhaServer } from "@/types/nezha-api";
+import { serverLocation } from "./server-location";
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
@@ -30,7 +31,7 @@ export function formatNezhaInfo(now: number, serverInfo: NezhaServer) {
 		swap: (serverInfo.state.swap_used / serverInfo.host.swap_total) * 100 || 0,
 		disk: (serverInfo.state.disk_used / serverInfo.host.disk_total) * 100 || 0,
 		stg: (serverInfo.state.disk_used / serverInfo.host.disk_total) * 100 || 0,
-		country_code: serverInfo.country_code,
+		country_code: serverLocation(serverInfo),
 		platform: serverInfo.host.platform || "",
 		net_out_transfer: serverInfo.state.net_out_transfer || 0,
 		net_in_transfer: serverInfo.state.net_in_transfer || 0,

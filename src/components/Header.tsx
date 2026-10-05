@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useBackground } from "@/hooks/use-background";
 import { useWebSocketContext } from "@/hooks/use-websocket-context";
 import { fetchLoginUser, fetchSetting } from "@/lib/nezha-api";
+import { nodeIsOnline } from "@/lib/server-location";
 import { cn } from "@/lib/utils";
 
 import AnimateCountClient from "./AnimatedCount";
@@ -63,7 +64,8 @@ function Header() {
 
 	const { lastData, connected } = useWebSocketContext();
 
-	const onlineCount = connected ? (lastData ? lastData.online || 0 : 0) : "...";
+	const onlineCount =
+		lastData?.servers.filter((s) => nodeIsOnline(lastData.now, s)).length ?? 0;
 
 	const siteName = settingData?.data?.config?.site_name;
 
@@ -179,12 +181,15 @@ function Header() {
 						)}
 					>
 						{connected ? (
-							<NumericText value={onlineCount} />
+							<span className="whitespace-nowrap tabular-nums">
+								节点在线 <NumericText value={onlineCount} />/
+								{lastData?.servers.length ?? 0}
+							</span>
 						) : (
 							<Loader visible={true} />
 						)}
 						<p className="text-muted-foreground">
-							{connected ? t("online") : t("offline")}
+							{connected ? "" : "实时连接中断"}
 						</p>
 						<span
 							className={cn("h-2 w-2 rounded-full bg-green-500", {

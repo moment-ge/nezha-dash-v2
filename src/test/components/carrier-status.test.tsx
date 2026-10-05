@@ -1,6 +1,7 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import CarrierStatus from "@/components/CarrierStatus";
+import { CarrierProvider } from "@/context/carrier-provider";
 import { renderWithProviders } from "@/test/utils";
 
 function mockProbes({ stale = false, unknown = false, fail = false } = {}) {
@@ -28,6 +29,12 @@ function mockProbes({ stale = false, unknown = false, fail = false } = {}) {
 					success: true,
 					data: [
 						{
+							server_id: 2,
+							checked_at: Date.now(),
+							latency_ms: 150,
+							loss_pct: 5,
+						},
+						{
 							server_id: 1,
 							checked_at: Date.now() - (stale ? 100000 : 0),
 							latency_ms: 21,
@@ -40,9 +47,31 @@ function mockProbes({ stale = false, unknown = false, fail = false } = {}) {
 	);
 }
 describe("carrier packet measurements", () => {
+	it("shares one fetch batch across nodes and never reuses another node's measurements", async () => {
+		mockProbes();
+		renderWithProviders(
+			<CarrierProvider>
+				<CarrierStatus serverId={1} />
+				<CarrierStatus serverId={2} />
+				<CarrierStatus serverId={3} />
+			</CarrierProvider>,
+		);
+		const cards = screen.getAllByRole("region", { name: "三网实时探测" });
+		await waitFor(() =>
+			expect(within(cards[1]).getAllByText("150 ms")).toHaveLength(3),
+		);
+		expect(within(cards[0]).getAllByText("21 ms")).toHaveLength(3);
+		expect(within(cards[2]).getAllByText("—")).toHaveLength(6);
+		expect(fetch).toHaveBeenCalledTimes(4);
+	});
+
 	it("shows measured partial loss and keeps other carriers when one fails", async () => {
 		mockProbes({ fail: true });
-		renderWithProviders(<CarrierStatus serverId={1} />);
+		renderWithProviders(
+			<CarrierProvider>
+				<CarrierStatus serverId={1} />
+			</CarrierProvider>,
+		);
 		await waitFor(() => expect(screen.getByText("20.0%")).toBeInTheDocument());
 		expect(screen.getByText("0.0%")).toBeInTheDocument();
 		expect(screen.getAllByText("—")).toHaveLength(2);
@@ -52,7 +81,11 @@ describe("carrier packet measurements", () => {
 		{ unknown: true },
 	])("does not turn stale or missing packet counts into zero loss: %j", async (options) => {
 		mockProbes(options);
-		renderWithProviders(<CarrierStatus serverId={1} />);
+		renderWithProviders(
+			<CarrierProvider>
+				<CarrierStatus serverId={1} />
+			</CarrierProvider>,
+		);
 		await waitFor(() => expect(fetch).toHaveBeenCalledTimes(4));
 		expect(screen.queryByText("0.0%")).not.toBeInTheDocument();
 		expect(screen.getAllByText("—").length).toBeGreaterThanOrEqual(3);

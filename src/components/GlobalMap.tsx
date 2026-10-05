@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import useTooltip from "@/hooks/use-tooltip";
 import { geoJsonString } from "@/lib/geo-json-string";
 import { countryCoordinates } from "@/lib/geo-limit";
+import { serverLocation } from "@/lib/server-location";
 import { cn, formatNezhaInfo } from "@/lib/utils";
 import type { NezhaServer } from "@/types/nezha-api";
 
@@ -45,9 +46,8 @@ export default function GlobalMap({
 		const serverCounts: Record<string, number> = {};
 
 		serverList.forEach((server) => {
-			if (!server.country_code) return;
-
-			const countryCode = server.country_code.toUpperCase();
+			const countryCode = serverLocation(server);
+			if (!countryCode) return;
 			if (!countryServers[countryCode]) {
 				countryList.push(countryCode);
 				countryServers[countryCode] = [];
@@ -79,7 +79,23 @@ export default function GlobalMap({
 			})}
 		>
 			<p className="text-sm font-medium opacity-40">
-				{t("map.Distributions")} {countryList.length} {t("map.Regions")}
+				{countryList.length ? (
+					<>
+						{t("map.Distributions")} {countryList.length} {t("map.Regions")}
+					</>
+				) : (
+					"地区待设置"
+				)}
+				{serverList.length >
+					Object.values(serverCounts).reduce((a, b) => a + b, 0) && (
+					<span>
+						{" "}
+						·{" "}
+						{serverList.length -
+							Object.values(serverCounts).reduce((a, b) => a + b, 0)}{" "}
+						台未设置地区
+					</span>
+				)}
 			</p>
 			<div className="w-full overflow-x-auto">
 				<InteractiveMap

@@ -1,22 +1,5 @@
-import { useQueries, useQuery } from "@tanstack/react-query";
-
-type Probe = {
-	server_id: number;
-	checked_at: number;
-	latency_ms: number | null;
-	loss_pct: number | null;
-};
-type Services = {
-	success: boolean;
-	data?: { services?: Record<string, { service_name: string }> };
-};
-async function get<T>(path: string): Promise<T> {
-	const response = await fetch(`/api/v1/${path}`, {
-		credentials: "same-origin",
-	});
-	if (!response.ok) throw Error("监控数据暂不可用");
-	return response.json();
-}
+import { useContext } from "react";
+import { CarrierContext } from "@/context/carrier-provider";
 
 export default function CarrierStatus({
 	serverId,
@@ -25,27 +8,7 @@ export default function CarrierStatus({
 	serverId: number;
 	online?: boolean;
 }) {
-	const { data: services } = useQuery({
-		queryKey: ["carrier-services"],
-		queryFn: () => get<Services>("service"),
-		refetchInterval: 30000,
-	});
-	const carriers = ["电信", "移动", "联通"].map((name) => ({
-		name,
-		id: Object.entries(services?.data?.services || {}).find(
-			([, s]) => s.service_name === `三网 · ${name}`,
-		)?.[0],
-	}));
-	const queries = useQueries({
-		queries: carriers.map((c) => ({
-			queryKey: ["carrier-recent", c.id],
-			queryFn: () =>
-				get<{ success: boolean; data?: Probe[] }>(`service/${c.id}/recent`),
-			enabled: !!c.id,
-			refetchInterval: 5000,
-			retry: 0,
-		})),
-	});
+	const { carriers, queries } = useContext(CarrierContext);
 	return (
 		<section
 			className="w-full min-w-0 rounded-lg border bg-muted/30 p-3 text-xs"

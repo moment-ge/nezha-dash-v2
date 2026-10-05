@@ -7,15 +7,20 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import Header, { RefreshToast } from "@/components/Header";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { CommandProvider } from "@/context/command-provider";
-import { createSettingResponse } from "@/test/fixtures";
+import { createServer, createSettingResponse } from "@/test/fixtures";
 import { createTestQueryClient } from "@/test/utils";
+import type { NezhaServer } from "@/types/nezha-api";
 
 const headerMocks = vi.hoisted(() => ({
 	backgroundImage: undefined as string | undefined,
 	connected: true,
 	fetchLoginUser: vi.fn(),
 	fetchSetting: vi.fn(),
-	lastData: null as { now: number; online?: number; servers: [] } | null,
+	lastData: null as {
+		now: number;
+		online?: number;
+		servers: NezhaServer[];
+	} | null,
 	needReconnect: false,
 	setNeedReconnect: vi.fn(),
 	updateBackground: vi.fn(),
@@ -101,7 +106,10 @@ describe("Header", () => {
 		headerMocks.lastData = {
 			now: Date.parse("2025-01-01T00:00:20.000Z"),
 			online: 4,
-			servers: [],
+			servers: [
+				createServer({ last_active: "2025-01-01T00:00:10.000Z" }),
+				createServer({ id: 2, last_active: "2024-01-01T00:00:00.000Z" }),
+			],
 		};
 		headerMocks.needReconnect = false;
 		headerMocks.setNeedReconnect.mockReset();
@@ -144,8 +152,10 @@ describe("Header", () => {
 		);
 		expect(screen.getAllByRole("link", { name: "Docs" })).toHaveLength(2);
 		expect(await screen.findAllByText("dashboard")).toHaveLength(2);
-		expect(screen.getByText("online").closest("button")).toHaveTextContent("4");
-		expect(screen.getByText("online")).toBeInTheDocument();
+		expect(screen.getByText(/节点在线/).closest("button")).toHaveTextContent(
+			"1/2",
+		);
+		expect(screen.getByText(/节点在线/)).toBeInTheDocument();
 
 		await waitFor(() => {
 			expect(document.title).toBe("Status Hub");
@@ -167,7 +177,7 @@ describe("Header", () => {
 		const { container } = renderHeader();
 
 		expect(await screen.findAllByText("login")).toHaveLength(2);
-		expect(screen.getByText("offline")).toBeInTheDocument();
+		expect(screen.getByText("实时连接中断")).toBeInTheDocument();
 		expect(
 			container.querySelector("[data-visible='true']"),
 		).toBeInTheDocument();

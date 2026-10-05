@@ -50,6 +50,15 @@ function mapFeature(code: string, name: string) {
 }
 
 describe("GlobalMap", () => {
+ it("shows configured Hong Kong when GeoIP is unavailable", () => {
+  renderMap(<GlobalMap now={now} serverList={[createServer({country_code:"",public_note:JSON.stringify({planDataMod:{networkRoute:"香港"}})})]}/>);
+  expect(screen.getByText(/map.Distributions 1 map.Regions/)).toBeInTheDocument();
+ });
+ it("labels missing regions instead of implying zero coverage", () => {
+  renderMap(<GlobalMap now={now} serverList={[createServer({country_code:"",public_note:""})]}/>);
+  expect(screen.getByText(/地区待设置/)).toBeInTheDocument();
+ });
+
 	it("counts unique countries and ignores servers without country codes", () => {
 		Object.assign(window, { CustomBackgroundImage: "/background.png" });
 
