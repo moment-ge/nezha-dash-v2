@@ -72,6 +72,8 @@ export default function GlobalMap({
 	const width = 900;
 	const height = 500;
 
+	if (!countryList.length) return null;
+
 	return (
 		<section
 			className={cn("flex flex-col gap-4 mt-8", {
@@ -79,23 +81,7 @@ export default function GlobalMap({
 			})}
 		>
 			<p className="text-sm font-medium opacity-40">
-				{countryList.length ? (
-					<>
-						{t("map.Distributions")} {countryList.length} {t("map.Regions")}
-					</>
-				) : (
-					"地区待设置"
-				)}
-				{serverList.length >
-					Object.values(serverCounts).reduce((a, b) => a + b, 0) && (
-					<span>
-						{" "}
-						·{" "}
-						{serverList.length -
-							Object.values(serverCounts).reduce((a, b) => a + b, 0)}{" "}
-						台未设置地区
-					</span>
-				)}
+				{t("map.Distributions")} {countryList.length} {t("map.Regions")}
 			</p>
 			<div className="w-full overflow-x-auto">
 				<InteractiveMap

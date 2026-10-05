@@ -54,9 +54,10 @@ describe("GlobalMap", () => {
   renderMap(<GlobalMap now={now} serverList={[createServer({country_code:"",public_note:JSON.stringify({planDataMod:{networkRoute:"香港"}})})]}/>);
   expect(screen.getByText(/map.Distributions 1 map.Regions/)).toBeInTheDocument();
  });
- it("labels missing regions instead of implying zero coverage", () => {
+ it("hides the empty map without showing configuration prompts", () => {
   renderMap(<GlobalMap now={now} serverList={[createServer({country_code:"",public_note:""})]}/>);
-  expect(screen.getByText(/地区待设置/)).toBeInTheDocument();
+  expect(screen.queryByText(/地区待设置/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/map.Distributions/)).not.toBeInTheDocument();
  });
 
 	it("counts unique countries and ignores servers without country codes", () => {
