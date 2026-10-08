@@ -1,16 +1,14 @@
-/* This route follows the light, narrow status-page layout independently of the dashboard theme. */
-.status-reference-shell { background:#fff; color:#202123; min-height:100vh; color-scheme:light; --background:#fff; --foreground:#202123; --card:#fff; --muted:#f7f7f7; --muted-foreground:#777; --border:#e8e8e8; }
-.status-reference {width:100%;max-width:672px;margin:0 auto;padding:32px 16px 48px;font-family:Inter,ui-sans-serif,system-ui,sans-serif;font-size:14px;line-height:1.5;}
+.status-reference {width:100%;max-width:1024px;margin:0 auto;padding:0 0 48px;font-family:Inter,ui-sans-serif,system-ui,sans-serif;font-size:14px;line-height:1.5;}
 .status-reference a {text-decoration:none;color:inherit;}
 .status-reference a:focus-visible {outline:2px solid #318c70;outline-offset:4px;}
 .status-reference .status-top {display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px;}
 .status-reference .status-wordmark {font-size:24px;font-weight:600;letter-spacing:-.8px;}
 .status-reference .status-action {display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:6px 12px;border-radius:6px;background:#27272a;color:#fff;font-size:13px;font-weight:500;white-space:nowrap;}
-.status-reference .status-back {display:inline-flex;align-items:center;min-height:44px;margin-bottom:12px;color:#6b6b6b;font-size:13px;}
-.status-reference .status-banner {border:1px solid #cce8dd;border-radius:8px;overflow:hidden;margin-bottom:24px;background:#fff;}
+.status-reference .status-back {display:inline-flex;align-items:center;min-height:44px;margin-bottom:12px;color:hsl(var(--muted-foreground));font-size:13px;}
+.status-reference .status-banner {border:1px solid #cce8dd;border-radius:8px;overflow:hidden;margin-bottom:24px;background:hsl(var(--card));}
 .status-reference .status-banner-title {display:flex;align-items:center;gap:9px;padding:16px;background:#eef8f3;}
 .status-reference h1 {font-size:16px;line-height:24px;font-weight:600;margin:0;overflow-wrap:anywhere;}
-.status-reference .status-banner-copy {padding:14px 16px;margin:0;font-size:14px;color:#626566;}
+.status-reference .status-banner-copy {padding:14px 16px;margin:0;font-size:14px;color:hsl(var(--muted-foreground));}
 .status-reference .status-banner-warning {border-color:#eddc94;}
 .status-reference .status-banner-warning .status-banner-title {background:#fbf4cf;}
 .status-reference .status-banner-offline {border-color:#efbfbf;}
@@ -18,29 +16,47 @@
 .status-reference .status-symbol {display:inline-flex;width:16px;height:16px;align-items:center;justify-content:center;flex-shrink:0;border-radius:50%;color:white;background:#60b99d;font-size:11px;font-weight:600;line-height:1;}
 .status-reference .status-symbol-offline {background:#d76b6b;}
 .status-reference .status-symbol-pending,.status-reference .status-symbol-updating {background:#d7b948;}
-.status-reference .status-panel {border:1px solid #e5e5e5;border-radius:8px;overflow:hidden;background:#fff;box-shadow:0 1px 2px #00000003;}
-.status-reference .status-panel-head {display:flex;align-items:center;gap:20px;justify-content:space-between;padding:16px;border-bottom:1px solid #f1f1f1;}
+.status-reference .status-panel {border:1px solid hsl(var(--border));border-radius:8px;overflow:hidden;background:hsl(var(--card));box-shadow:0 1px 2px #00000003;}
+.status-reference .status-panel-head {display:flex;align-items:center;gap:20px;justify-content:space-between;padding:16px;border-bottom:1px solid hsl(var(--border));}
 .status-reference h2 {font-size:16px;font-weight:500;margin:0;}
-.status-reference .status-period {font-size:12px;color:#969696;white-space:nowrap;}
-.status-reference .status-node {padding:16px;border-bottom:1px solid #f2f2f2;}
+.status-reference .status-period {font-size:12px;color:hsl(var(--muted-foreground));white-space:nowrap;}
+.status-reference .status-node {padding:16px;border-bottom:1px solid hsl(var(--border));}
 .status-reference .status-node:last-child {border-bottom:0;}
 .status-reference .status-node-heading {display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
 .status-reference .status-node-link {display:flex;align-items:center;gap:8px;min-width:0;min-height:28px;}
 .status-reference .status-node-link h3 {font-size:14px;font-weight:500;margin:0;overflow-wrap:anywhere;}
 .status-reference .status-node-link:hover h3 {text-decoration:underline;text-underline-offset:3px;}
-.status-reference .status-location,.status-reference .status-node-state {font-size:12px;color:#8a8a8a;white-space:nowrap;}
-.status-reference .status-chevron {font-size:17px;color:#aaa;margin-left:2px;}
+.status-reference .status-location,.status-reference .status-node-state {font-size:12px;color:hsl(var(--muted-foreground));white-space:nowrap;}
+.status-reference .status-chevron {font-size:17px;color:hsl(var(--muted-foreground));margin-left:2px;}
 .status-reference .status-history svg {width:100%;height:18px;display:block;}
-.status-reference .status-history-caption {display:flex;justify-content:space-between;gap:8px;font-size:10px;color:#999;margin-top:7px;}
-.status-reference .status-region-summary {display:flex;flex-wrap:wrap;gap:8px 16px;color:#777;font-size:12px;margin:16px 0 0;}
+.status-reference .status-history-caption {display:flex;justify-content:space-between;gap:8px;font-size:10px;color:hsl(var(--muted-foreground));margin-top:7px;}
+.status-reference .status-region-summary {display:flex;flex-wrap:wrap;gap:8px 16px;color:hsl(var(--muted-foreground));font-size:12px;margin:16px 0 0;}
 .status-reference .status-metrics {display:grid;grid-template-columns:1fr 1fr;margin:0;}
-.status-reference .status-metric {padding:16px;border-bottom:1px solid #f1f1f1;}
-.status-reference .status-metric:nth-child(odd) {border-right:1px solid #f1f1f1;}
-.status-reference .status-metric dt {color:#777;font-size:12px;}
+.status-reference .status-metric {padding:16px;border-bottom:1px solid hsl(var(--border));}
+.status-reference .status-metric:nth-child(odd) {border-right:1px solid hsl(var(--border));}
+.status-reference .status-metric dt {color:hsl(var(--muted-foreground));font-size:12px;}
 .status-reference .status-metric dd {margin:6px 0 0;font-size:20px;font-weight:500;font-variant-numeric:tabular-nums;}
-.status-reference .status-system {display:flex;flex-wrap:wrap;gap:8px 16px;padding:16px;color:#777;font-size:12px;}
-.status-reference .status-details-link {display:flex;justify-content:center;align-items:center;min-height:44px;border-top:1px solid #eee;font-size:13px;}
-.status-reference .status-details-link:hover {background:#fafafa;}
-.status-reference .status-footer {text-align:center;font-size:11px;line-height:1.7;color:#939393;max-width:590px;margin:40px auto 0;}
-.status-reference .status-empty {padding:24px 16px;color:#888;}
-@media(max-width:480px){.status-reference{padding-top:24px}.status-reference .status-wordmark{font-size:22px}.status-reference .status-action{min-height:40px}.status-reference .status-node-link{flex-wrap:wrap;gap:6px}.status-reference .status-node-link h3{max-width:180px}.status-reference .status-history-caption{font-size:9px}.status-reference .status-node-heading{gap:8px}.status-reference .status-panel-head{gap:12px}.status-reference .status-node-state{font-size:11px}.status-reference .status-node-link{min-height:36px}}
+.status-reference .status-system {display:flex;flex-wrap:wrap;gap:8px 16px;padding:16px;color:hsl(var(--muted-foreground));font-size:12px;}
+.status-reference .status-details-link {display:flex;justify-content:center;align-items:center;min-height:44px;border-top:1px solid hsl(var(--border));font-size:13px;}
+.status-reference .status-details-link:hover {background:hsl(var(--muted));}
+.status-reference .status-footer {text-align:center;font-size:11px;line-height:1.7;color:hsl(var(--muted-foreground));max-width:590px;margin:40px auto 0;}
+.status-reference .status-empty {padding:24px 16px;color:hsl(var(--muted-foreground));}
+@media(max-width:480px){.status-reference{padding-top:0}.status-reference .status-wordmark{font-size:22px}.status-reference .status-action{min-height:40px}.status-reference .status-node-link{flex-wrap:wrap;gap:6px}.status-reference .status-node-link h3{max-width:180px}.status-reference .status-history-caption{font-size:9px}.status-reference .status-node-heading{gap:8px}.status-reference .status-panel-head{gap:12px}.status-reference .status-node-state{font-size:11px}.status-reference .status-node-link{min-height:36px}}
+
+.status-reference {--status-ok:#60b99d;--status-empty:#e9eceb;color:hsl(var(--foreground));}
+.dark .status-reference {--status-ok:#52b99a;--status-empty:hsl(var(--muted));}
+.dark .status-reference .status-panel {box-shadow:0 0 0 1px #ffffff04;}
+.dark .status-reference .status-banner {border-color:#235e4d;}
+.dark .status-reference .status-banner-title {background:color-mix(in srgb,hsl(var(--card)) 88%,#34d399);}
+.dark .status-reference .status-banner-warning {border-color:#765e23;}
+.dark .status-reference .status-banner-warning .status-banner-title {background:color-mix(in srgb,hsl(var(--card)) 88%,#fbbf24);}
+.dark .status-reference .status-banner-offline {border-color:#783a3a;}
+.dark .status-reference .status-banner-offline .status-banner-title {background:color-mix(in srgb,hsl(var(--card)) 88%,#f87171);}
+.status-health {list-style:none;display:flex;flex-wrap:wrap;gap:8px;padding:0;margin:0 0 14px;}
+.status-health li {border-radius:6px;padding:6px 9px;font-size:12px;background:hsl(var(--muted));color:hsl(var(--muted-foreground));max-width:100%;}
+.status-health li span {font-weight:600;}
+.status-health small {display:block;font-size:11px;line-height:1.6;}
+.status-health .status-health-warning {background:#fffbeb;color:#92400e;}
+.status-health .status-health-danger {background:#fef2f2;color:#b91c1c;}
+.dark .status-health .status-health-warning {background:#fbbf2414;color:#fcd778;}
+.dark .status-health .status-health-danger {background:#f8717114;color:#fca5a5;}

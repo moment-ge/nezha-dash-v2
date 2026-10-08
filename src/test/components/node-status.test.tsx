@@ -6,7 +6,7 @@ import { renderWithProviders } from "@/test/utils";
 const now = Date.parse("2025-01-01T00:00:20Z");
 const hk = createServer({ name: "香港 CN2", country_code: "HK" });
 describe("node status view", () => {
-	it("groups regions by actual node counts and links each node separately", () => {
+	it("links each node separately without region summary", () => {
 		renderWithProviders(
 			<NodeStatusView
 				servers={[
@@ -18,8 +18,7 @@ describe("node status view", () => {
 				fresh
 			/>,
 		);
-		expect(screen.getByText("香港 · 2 台")).toBeInTheDocument();
-		expect(screen.getByText("日本 · 1 台")).toBeInTheDocument();
+		expect(screen.queryByRole("region", { name: "节点分布" })).not.toBeInTheDocument();
 		expect(
 			screen.getByRole("heading", { name: "所有节点均在线" }),
 		).toBeInTheDocument();

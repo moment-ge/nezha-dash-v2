@@ -1,4 +1,3 @@
-import CarrierStatus from "@/components/CarrierStatus";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Navigate, useParams } from "react-router-dom";
 import NetworkChartLoading from "@/components/NetworkChartLoading";
@@ -7,11 +6,7 @@ import ServerDetailOverview from "@/components/ServerDetailOverview";
 import TabSwitch from "@/components/TabSwitch";
 import { Separator } from "@/components/ui/separator";
 
-const NetworkChart = lazy(() =>
-	import("@/components/NetworkChart").then((module) => ({
-		default: module.NetworkChart,
-	})),
-);
+const DomesticNetworkChart = lazy(() => import("@/components/DomesticNetworkChart"));
 
 export default function ServerDetail() {
 	useEffect(() => {
@@ -30,7 +25,6 @@ export default function ServerDetail() {
 	return (
 		<div className="mx-auto w-full max-w-5xl px-0 flex flex-col gap-4 server-info">
 			<ServerDetailOverview server_id={server_id} />
-			<CarrierStatus serverId={Number(server_id)} />
 			<section className="flex items-center my-2 w-full">
 				<Separator className="flex-1" />
 				<div className="flex justify-center w-full max-w-50">
@@ -49,9 +43,11 @@ export default function ServerDetail() {
 
 			{currentTab === tabs[0] && <ServerDetailChart server_id={server_id} />}
 			{currentTab === tabs[1] && (
-				<Suspense fallback={<NetworkChartLoading />}>
-					<NetworkChart server_id={Number(server_id)} show={true} />
-				</Suspense>
+				<>
+					<Suspense fallback={<NetworkChartLoading />}>
+						<DomesticNetworkChart serverId={Number(server_id)} />
+					</Suspense>
+				</>
 			)}
 		</div>
 	);

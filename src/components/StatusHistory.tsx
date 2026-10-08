@@ -41,7 +41,7 @@ export default function StatusHistory({
 						width="6"
 						height="18"
 						rx="1"
-						fill={bin.count ? "#60b99d" : "#e9eceb"}
+						fill={bin.count ? "var(--status-ok)" : "var(--status-empty)"}
 					>
 						<title>
 							{time(bin.start)} ·{" "}

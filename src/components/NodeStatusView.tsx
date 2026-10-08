@@ -1,3 +1,5 @@
+import { nodeHealth, type HealthIssue } from "@/lib/node-health";
+import type { DomesticSnapshot } from "@/hooks/use-domestic-probes";
 import StatusHistory, { type ReportingFeed } from "./StatusHistory";
 import "./node-status.css";
 import { Link } from "react-router-dom";
@@ -36,13 +38,33 @@ function Metric({ label, value }: { label: string; value: string }) {
 		</div>
 	);
 }
+function HealthBadges({ issues }: { issues: HealthIssue[] }) {
+	return issues.length ? (
+		<ul className="status-health" aria-label="节点异常提示">
+			{issues.map((issue) => (
+				<li
+					key={issue.label}
+					className={`status-health-${issue.level}`}
+					title={issue.detail}
+				>
+					<span>{issue.label}</span>
+					<small>{issue.detail}</small>
+				</li>
+			))}
+		</ul>
+	) : null;
+}
 export default function NodeStatusView({
 	servers,
 	now,
 	fresh,
 	selectedId,
 	histories = {},
+	domestic,
+	probeFailed = false,
 }: {
+	domestic?: DomesticSnapshot;
+	probeFailed?: boolean;
 	servers: NezhaServer[];
 	now: number;
 	fresh: boolean;
@@ -58,6 +80,13 @@ export default function NodeStatusView({
 	const offline = visible.filter(
 		(s) => nodeState(s, now, fresh) === "offline",
 	).length;
+	const issues = Object.fromEntries(
+		visible.map((s) => [
+			s.id,
+			nodeHealth(s, now, fresh, domestic, probeFailed),
+		]),
+	);
+	const affected = visible.filter((s) => issues[s.id].length > 0).length;
 	const healthy = fresh && visible.length > 0 && online === visible.length;
 	const title = !fresh
 		? "正在更新节点状态"
@@ -67,8 +96,10 @@ export default function NodeStatusView({
 				: "未找到这个节点"
 			: healthy
 				? selected
-					? `${selected.name} 在线`
-					: "所有节点均在线"
+					? `${selected.name} 在线${affected ? " · 有异常提示" : ""}`
+					: affected
+						? `${affected} 台节点有异常提示`
+						: "所有节点均在线"
 				: offline
 					? selected
 						? `${selected.name} 已离线`
@@ -78,28 +109,16 @@ export default function NodeStatusView({
 	const live = selected && nodeState(selected, now, fresh) === "online";
 	const percent = (used: number, total: number) =>
 		total > 0 ? `${((used / total) * 100).toFixed(1)}%` : "—";
-	const state = healthy
-		? "online"
-		: offline && fresh
-			? "offline"
-			: fresh
-				? "pending"
-				: "updating";
-	const counts = new Map<string, number>();
-	for (const server of visible) {
-		const code = serverLocation(server);
-		if (code) counts.set(code, (counts.get(code) || 0) + 1);
-	}
+	const state =
+		healthy && !affected
+			? "online"
+			: offline && fresh
+				? "offline"
+				: fresh
+					? "pending"
+					: "updating";
 	return (
 		<div className="status-reference">
-			<header className="status-top">
-				<Link to="/status" className="status-wordmark">
-					节点状态
-				</Link>
-				<Link to="/" className="status-action">
-					监控概览
-				</Link>
-			</header>
 			{selectedId !== undefined && (
 				<Link to="/status" className="status-back">
 					‹ 全部节点
@@ -153,6 +172,7 @@ export default function NodeStatusView({
 										{labels[nodeState(server, now, fresh)]}
 									</span>
 								</div>
+								<HealthBadges issues={issues[server.id] || []} />
 								<StatusHistory feed={histories[server.id]} now={now} />
 							</article>
 						))
@@ -171,6 +191,7 @@ export default function NodeStatusView({
 							<span className="status-period">最近 24 小时</span>
 						</div>
 						<div className="status-node">
+							<HealthBadges issues={issues[selected.id] || []} />
 							<StatusHistory feed={histories[selected.id]} now={now} />
 						</div>
 					</section>
@@ -237,17 +258,10 @@ export default function NodeStatusView({
 					</section>
 				</>
 			)}
-			{!!counts.size && (
-				<section aria-label="节点分布" className="status-region-summary">
-					{[...counts].map(([code, count]) => (
-						<span key={code}>
-							{regionName(code)} · {count} 台
-						</span>
-					))}
-				</section>
-			)}
 			<footer className="status-footer">
-				在线状态依据探针最近上报。时间条表示各时段是否有上报记录；无记录不等同于故障，也不代表业务可用率。
+				在线状态依据探针最近上报。超过 20 秒提示上报延迟，超过 30
+				秒显示离线；资源使用率达到 90% 提示高占用。线路丢包来自最近一次 ICMP
+				实测，连续两轮延迟明显升高才提示疑似拥堵。时间条表示各时段是否有上报记录；无记录不等同于故障，也不代表业务可用率。
 			</footer>
 		</div>
 	);

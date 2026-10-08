@@ -1,3 +1,4 @@
+import { useDomesticProbes } from "@/hooks/use-domestic-probes";
 import { useQueries } from "@tanstack/react-query";
 import { fetchServerMetrics } from "@/lib/nezha-api";
 import { useEffect, useState } from "react";
@@ -6,6 +7,7 @@ import NodeStatusView from "@/components/NodeStatusView";
 import { useWebSocketContext } from "@/hooks/use-websocket-context";
 export default function NodeStatus() {
 	const { id } = useParams();
+	const probes = useDomesticProbes();
 	const { lastData, connected } = useWebSocketContext();
 	const [clock, setClock] = useState(Date.now());
 	useEffect(() => {
@@ -46,6 +48,8 @@ export default function NodeStatus() {
 	const fresh = connected && !!lastData && age < 30000 && age > -30000;
 	return (
 		<NodeStatusView
+			domestic={probes.data}
+			probeFailed={probes.isError}
 			histories={histories}
 			servers={lastData?.servers || []}
 			now={lastData?.now || clock}
