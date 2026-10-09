@@ -1,10 +1,10 @@
-import { useDomesticProbes } from "@/hooks/use-domestic-probes";
 import { useQueries } from "@tanstack/react-query";
-import { fetchServerMetrics } from "@/lib/nezha-api";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import NodeStatusView from "@/components/NodeStatusView";
+import { useDomesticProbes } from "@/hooks/use-domestic-probes";
 import { useWebSocketContext } from "@/hooks/use-websocket-context";
+import { fetchServerMetrics } from "@/lib/nezha-api";
 export default function NodeStatus() {
 	const { id } = useParams();
 	const probes = useDomesticProbes();
@@ -16,6 +16,7 @@ export default function NodeStatus() {
 	}, []);
 	useEffect(() => {
 		window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+		document.title = id === undefined ? "节点状态" : "节点详细监控";
 	}, [id]);
 	const nodes = (lastData?.servers || []).filter(
 		(s) => id === undefined || s.id === Number(id),
@@ -48,11 +49,12 @@ export default function NodeStatus() {
 	const fresh = connected && !!lastData && age < 30000 && age > -30000;
 	return (
 		<NodeStatusView
+			showCharts
 			domestic={probes.data}
 			probeFailed={probes.isError}
 			histories={histories}
 			servers={lastData?.servers || []}
-			now={lastData?.now || clock}
+			now={clock}
 			fresh={fresh}
 			selectedId={id === undefined ? undefined : Number(id)}
 		/>

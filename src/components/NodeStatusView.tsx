@@ -1,22 +1,21 @@
-import { nodeHealth, type HealthIssue } from "@/lib/node-health";
-import type { DomesticSnapshot } from "@/hooks/use-domestic-probes";
-import StatusHistory, { type ReportingFeed } from "./StatusHistory";
-import "./node-status.css";
+import { lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
-import { nodeIsOnline, serverLocation } from "@/lib/server-location";
+import type { DomesticSnapshot } from "@/hooks/use-domestic-probes";
 import { formatBytes } from "@/lib/format";
+import { nodeState } from "@/lib/monitoring";
+import { type HealthIssue, nodeHealth } from "@/lib/node-health";
 import type { NezhaServer } from "@/types/nezha-api";
-import { regionName } from "./RegionSummary";
+import MonitoringOverview from "./MonitoringOverview";
+import StatusHistory, { type ReportingFeed } from "./StatusHistory";
+import { ModeToggle } from "./ThemeSwitcher";
+import "./node-status.css";
+import "./monitoring.css";
 
-export function nodeState(server: NezhaServer, now: number, fresh: boolean) {
-	if (!fresh) return "updating";
-	if (
-		!Number.isFinite(Date.parse(server.last_active)) ||
-		Date.parse(server.last_active) <= 0
-	)
-		return "pending";
-	return nodeIsOnline(now, server) ? "online" : "offline";
-}
+export { nodeState } from "@/lib/monitoring";
+
+const MonitoringHistory = lazy(() => import("./MonitoringHistory"));
+const DomesticNetworkChart = lazy(() => import("./DomesticNetworkChart"));
+
 const labels = {
 	online: "在线",
 	offline: "离线",
@@ -62,9 +61,11 @@ export default function NodeStatusView({
 	histories = {},
 	domestic,
 	probeFailed = false,
+	showCharts = false,
 }: {
 	domestic?: DomesticSnapshot;
 	probeFailed?: boolean;
+	showCharts?: boolean;
 	servers: NezhaServer[];
 	now: number;
 	fresh: boolean;
@@ -118,7 +119,20 @@ export default function NodeStatusView({
 					? "pending"
 					: "updating";
 	return (
-		<div className="status-reference">
+		<div className="status-reference status-monitor-layout">
+			<header className="monitor-top">
+				<Link to="/status" className="monitor-brand">
+					<strong>Boan Status</strong>
+					<small>服务器与线路监控</small>
+				</Link>
+				<nav aria-label="状态站导航">
+					<Link to="/">监控概览</Link>
+					<Link to="/status" aria-current="page">
+						节点状态
+					</Link>
+					<ModeToggle />
+				</nav>
+			</header>
 			{selectedId !== undefined && (
 				<Link to="/status" className="status-back">
 					‹ 全部节点
@@ -145,43 +159,14 @@ export default function NodeStatusView({
 				</p>
 			</section>
 			{selectedId === undefined && (
-				<section aria-label="各节点状态" className="status-panel">
-					<div className="status-panel-head">
-						<h2>系统状态</h2>
-						<span className="status-period">最近 24 小时</span>
-					</div>
-					{servers.length ? (
-						servers.map((server) => (
-							<article key={server.id} className="status-node">
-								<div className="status-node-heading">
-									<Link
-										to={`/status/${server.id}`}
-										aria-label={`查看 ${server.name} 的状态`}
-										className="status-node-link"
-									>
-										<StatusSymbol state={nodeState(server, now, fresh)} />
-										<h3>{server.name}</h3>
-										<span className="status-location">
-											{regionName(serverLocation(server))}
-										</span>
-										<span className="status-chevron" aria-hidden="true">
-											›
-										</span>
-									</Link>
-									<span className="status-node-state">
-										{labels[nodeState(server, now, fresh)]}
-									</span>
-								</div>
-								<HealthBadges issues={issues[server.id] || []} />
-								<StatusHistory feed={histories[server.id]} now={now} />
-							</article>
-						))
-					) : (
-						<p className="status-empty">
-							{fresh ? "暂无公开节点" : "正在加载节点…"}
-						</p>
-					)}
-				</section>
+				<MonitoringOverview
+					servers={servers}
+					now={now}
+					fresh={fresh}
+					histories={histories}
+					domestic={probeFailed ? undefined : domestic}
+					issues={issues}
+				/>
 			)}
 			{selected && (
 				<>
@@ -256,6 +241,27 @@ export default function NodeStatusView({
 							查看详细监控与图表 <span aria-hidden="true"> ↗</span>
 						</Link>
 					</section>
+					{showCharts && (
+						<Suspense
+							fallback={
+								<p className="monitor-chart-empty" role="status">
+									正在加载图表…
+								</p>
+							}
+						>
+							<MonitoringHistory
+								key={selected.id}
+								serverId={selected.id}
+								now={now}
+							/>
+							<div className="monitor-history-section">
+								<DomesticNetworkChart
+									key={selected.id}
+									serverId={selected.id}
+								/>
+							</div>
+						</Suspense>
+					)}
 				</>
 			)}
 			<footer className="status-footer">
