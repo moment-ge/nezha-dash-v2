@@ -1,5 +1,3 @@
-import { Link } from "react-router-dom";
-import RegionSummary from "@/components/RegionSummary";
 import {
 	ArrowDownIcon,
 	ArrowsUpDownIcon,
@@ -11,34 +9,30 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import GlobalMap from "@/components/GlobalMap";
 import GroupSwitch from "@/components/GroupSwitch";
 import { Loader } from "@/components/loading/Loader";
+import RegionSummary from "@/components/RegionSummary";
 import ServerCard from "@/components/ServerCard";
 import ServerCardInline from "@/components/ServerCardInline";
 import ServerOverview from "@/components/ServerOverview";
 import { SORT_TYPES } from "@/context/sort-context";
+import { useLiveStatus } from "@/hooks/use-live-status";
 import { useSort } from "@/hooks/use-sort";
 import { useStatus } from "@/hooks/use-status";
-import { useWebSocketContext } from "@/hooks/use-websocket-context";
+import { nodeState } from "@/lib/monitoring";
 import { fetchServerGroup } from "@/lib/nezha-api";
 import { cn } from "@/lib/utils";
 import type { NezhaServer, ServerGroup } from "@/types/nezha-api";
 
 type PreparedServer = {
 	online: boolean;
+	status: ReturnType<typeof nodeState>;
 	server: NezhaServer;
 };
 
 const EMPTY_SERVER_LIST: NezhaServer[] = [];
-
-const isServerOnline = (now: number, server: NezhaServer) => {
-	const lastActiveTime = server.last_active.startsWith("000")
-		? 0
-		: Date.parse(server.last_active);
-
-	return now - lastActiveTime <= 30000;
-};
 
 const getUsagePercent = (used = 0, total = 0) => {
 	if (!total) return 0;
@@ -105,7 +99,7 @@ export default function Servers({
 		queryFn: () => fetchServerGroup(),
 		retry: false,
 	});
-	const { lastData, connected } = useWebSocketContext();
+	const { lastData, connected, now, fresh } = useLiveStatus();
 	const { status } = useStatus();
 	const [showMap, setShowMap] = useState<string>("0");
 	const [inline, setInline] = useState<string>("0");
@@ -246,15 +240,17 @@ export default function Servers({
 				continue;
 			}
 
-			const online = isServerOnline(nezhaWsData.now, server);
+			const state = nodeState(server, now, fresh);
+			const online = state === "online";
 
 			groupFilteredServers.push({
+				status: state,
 				online,
 				server,
 			});
 
 			if (!online) {
-				overview.offlineServers += 1;
+				if (state === "offline") overview.offlineServers += 1;
 				continue;
 			}
 
@@ -269,7 +265,7 @@ export default function Servers({
 			status === "all"
 				? groupFilteredServers
 				: groupFilteredServers.filter((item) =>
-						status === "online" ? item.online : !item.online,
+						status === "online" ? item.online : item.status === "offline",
 					);
 
 		if (sortType === "default") {
@@ -373,6 +369,8 @@ export default function Servers({
 		currentGroup,
 		groupServerIdSets,
 		nezhaWsData,
+		now,
+		fresh,
 		sortOrder,
 		sortType,
 		status,
@@ -418,6 +416,11 @@ export default function Servers({
 					节点状态 ↗
 				</Link>
 			</nav>
+			{!fresh && (
+				<p role="status" className="mb-3 text-sm text-muted-foreground">
+					正在更新节点状态，暂不判断在线或离线。
+				</p>
+			)}
 			<ServerOverview
 				total={totalServers}
 				online={onlineServers}
@@ -541,7 +544,7 @@ export default function Servers({
 				</div>
 			)}
 			{hasServers && showMap === "1" && (
-				<GlobalMap now={nezhaWsData.now} serverList={nezhaWsData.servers} />
+				<GlobalMap now={now} fresh={fresh} serverList={nezhaWsData.servers} />
 			)}
 			{!hasServers ? (
 				<ServerEmptyState />
@@ -551,7 +554,8 @@ export default function Servers({
 						{filteredServers.map((serverInfo) => (
 							<ServerCardInline
 								key={serverInfo.id}
-								now={nezhaWsData.now}
+								now={now}
+								fresh={fresh}
 								serverInfo={serverInfo}
 							/>
 						))}
@@ -561,7 +565,8 @@ export default function Servers({
 						{filteredServers.map((serverInfo) => (
 							<ServerCard
 								key={serverInfo.id}
-								now={nezhaWsData.now}
+								now={now}
+								fresh={fresh}
 								serverInfo={serverInfo}
 							/>
 						))}

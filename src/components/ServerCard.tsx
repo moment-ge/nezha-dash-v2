@@ -19,9 +19,11 @@ import { Card } from "./ui/card";
 
 function ServerCard({
 	now,
+	fresh = true,
 	serverInfo,
 }: {
 	now: number;
+	fresh?: boolean;
 	serverInfo: NezhaServer;
 }) {
 	const { t } = useTranslation();
@@ -30,6 +32,8 @@ function ServerCard({
 		name,
 		country_code,
 		online,
+		status,
+		statusText,
 		cpu,
 		up,
 		down,
@@ -39,7 +43,7 @@ function ServerCard({
 		net_out_transfer,
 		public_note,
 		platform,
-	} = formatNezhaInfo(now, serverInfo);
+	} = formatNezhaInfo(now, serverInfo, fresh);
 
 	const cardClick = () => {
 		saveMainPageScrollPosition();
@@ -81,7 +85,11 @@ function ServerCard({
 				})}
 				style={{ gridTemplateColumns: "auto auto 1fr" }}
 			>
-				<span className="h-2 w-2 shrink-0 rounded-full bg-green-500 self-center"></span>
+				<span
+					role="img"
+					aria-label={statusText}
+					className="h-2 w-2 shrink-0 rounded-full bg-green-500 self-center"
+				/>
 				<div
 					className={cn(
 						"flex items-center justify-center",
@@ -240,7 +248,14 @@ function ServerCard({
 				})}
 				style={{ gridTemplateColumns: "auto auto 1fr" }}
 			>
-				<span className="h-2 w-2 shrink-0 rounded-full bg-red-500 self-center"></span>
+				<span
+					role="img"
+					aria-label={statusText}
+					className={cn(
+						"h-2 w-2 shrink-0 rounded-full self-center",
+						status === "offline" ? "bg-red-500" : "bg-amber-500",
+					)}
+				/>
 				<div
 					className={cn(
 						"flex items-center justify-center",
@@ -258,6 +273,9 @@ function ServerCard({
 					>
 						{name}
 					</p>
+					<span className="text-[11px] text-muted-foreground">
+						{statusText}
+					</span>
 					<div
 						className={cn("hidden lg:block", {
 							"lg:hidden": fixedTopServerName,

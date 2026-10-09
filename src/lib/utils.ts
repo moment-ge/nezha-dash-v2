@@ -2,13 +2,19 @@ import { type ClassValue, clsx } from "clsx";
 import dayjs from "dayjs";
 import { twMerge } from "tailwind-merge";
 import type { NezhaServer } from "@/types/nezha-api";
+import { nodeState, nodeStateLabels } from "./monitoring";
 import { serverLocation } from "./server-location";
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
 
-export function formatNezhaInfo(now: number, serverInfo: NezhaServer) {
+export function formatNezhaInfo(
+	now: number,
+	serverInfo: NezhaServer,
+	fresh = true,
+) {
+	const status = nodeState(serverInfo, now, fresh);
 	const lastActiveTime = serverInfo.last_active.startsWith("000")
 		? 0
 		: parseISOTimestamp(serverInfo.last_active);
@@ -19,10 +25,13 @@ export function formatNezhaInfo(now: number, serverInfo: NezhaServer) {
 		process: serverInfo.state.process_count || 0,
 		up: serverInfo.state.net_out_speed / 1024 / 1024 || 0,
 		down: serverInfo.state.net_in_speed / 1024 / 1024 || 0,
-		last_active_time_string: lastActiveTime
-			? dayjs(lastActiveTime).format("YYYY-MM-DD HH:mm:ss")
-			: "",
-		online: now - lastActiveTime <= 30000,
+		last_active_time_string:
+			Number.isFinite(lastActiveTime) && lastActiveTime > 0
+				? dayjs(lastActiveTime).format("YYYY-MM-DD HH:mm:ss")
+				: "",
+		online: status === "online",
+		status,
+		statusText: nodeStateLabels[status],
 		uptime: serverInfo.state.uptime || 0,
 		version: serverInfo.host.version || null,
 		tcp: serverInfo.state.tcp_conn_count || 0,

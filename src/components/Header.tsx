@@ -3,14 +3,15 @@ import { ImageMinus } from "lucide-react";
 import { DateTime } from "luxon";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ModeToggle } from "@/components/ThemeSwitcher";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBackground } from "@/hooks/use-background";
+import { useLiveStatus } from "@/hooks/use-live-status";
 import { useWebSocketContext } from "@/hooks/use-websocket-context";
+import { nodeState } from "@/lib/monitoring";
 import { fetchLoginUser, fetchSetting } from "@/lib/nezha-api";
-import { nodeIsOnline } from "@/lib/server-location";
 import { cn } from "@/lib/utils";
 
 import AnimateCountClient from "./AnimatedCount";
@@ -63,10 +64,11 @@ function Header() {
 		retry: false,
 	});
 
-	const { lastData, connected } = useWebSocketContext();
+	const { lastData, connected, now, fresh } = useLiveStatus();
 
 	const onlineCount =
-		lastData?.servers.filter((s) => nodeIsOnline(lastData.now, s)).length ?? 0;
+		lastData?.servers.filter((s) => nodeState(s, now, fresh) === "online")
+			.length ?? 0;
 
 	const siteName = settingData?.data?.config?.site_name;
 
@@ -181,7 +183,7 @@ function Header() {
 							},
 						)}
 					>
-						{connected ? (
+						{fresh ? (
 							<span className="whitespace-nowrap tabular-nums">
 								节点在线 <NumericText value={onlineCount} />/
 								{lastData?.servers.length ?? 0}
@@ -190,11 +192,11 @@ function Header() {
 							<Loader visible={true} />
 						)}
 						<p className="text-muted-foreground">
-							{connected ? "" : "实时连接中断"}
+							{fresh ? "" : connected ? "正在更新节点状态" : "实时连接中断"}
 						</p>
 						<span
 							className={cn("h-2 w-2 rounded-full bg-green-500", {
-								"bg-red-500": !connected,
+								"bg-amber-500": !fresh,
 							})}
 						></span>
 					</Button>

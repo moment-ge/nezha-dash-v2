@@ -1,6 +1,6 @@
-import { mergeNodeNotes } from "@/lib/server-location";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { mergeNodeNotes } from "@/lib/server-location";
 import type { NezhaWebsocketResponse } from "@/types/nezha-api";
 import {
 	WebSocketContext,
@@ -45,6 +45,12 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 		NezhaWebsocketResponse[]
 	>([]);
 	const [connected, setConnected] = useState(false);
+	const [receivedAt, setReceivedAt] = useState<number | null>(null);
+	const [clock, setClock] = useState(Date.now);
+	useEffect(() => {
+		const timer = setInterval(() => setClock(Date.now()), 5000);
+		return () => clearInterval(timer);
+	}, []);
 	const [needReconnect, setNeedReconnect] = useState(false);
 	const ws = useRef<WebSocket | null>(null);
 	const reconnectTimeout = useRef<NodeJS.Timeout>(null);
@@ -89,7 +95,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 			wsUrl.protocol = wsUrl.protocol.replace("http", "ws");
 
 			ws.current = new WebSocket(wsUrl.toString());
-            const publicNotes = new Map<number, string>();
+			const publicNotes = new Map<number, string>();
 
 			ws.current.onopen = () => {
 				console.log("WebSocket connected");
@@ -120,7 +126,10 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
 					const newData = normalizeWebSocketResponse(JSON.parse(event.data));
 					newData.servers = mergeNodeNotes(newData.servers, publicNotes);
-                    setLastData(newData);
+					setLastData(newData);
+					const received = Date.now();
+					setReceivedAt(received);
+					setClock(received);
 					// 更新历史消息，保持最新的30条记录
 					setMessageHistory((prev) => {
 						const updated = [newData, ...prev];
@@ -168,6 +177,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
 	const contextValue: WebSocketContextType = {
 		lastData,
+		receivedAt,
+		clock,
 		connected,
 		messageHistory,
 		reconnect,

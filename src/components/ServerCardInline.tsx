@@ -19,9 +19,11 @@ import { Separator } from "./ui/separator";
 
 function ServerCardInline({
 	now,
+	fresh = true,
 	serverInfo,
 }: {
 	now: number;
+	fresh?: boolean;
 	serverInfo: NezhaServer;
 }) {
 	const { t } = useTranslation();
@@ -30,6 +32,8 @@ function ServerCardInline({
 		name,
 		country_code,
 		online,
+		status,
+		statusText,
 		cpu,
 		up,
 		down,
@@ -40,7 +44,7 @@ function ServerCardInline({
 		net_in_transfer,
 		net_out_transfer,
 		public_note,
-	} = formatNezhaInfo(now, serverInfo);
+	} = formatNezhaInfo(now, serverInfo, fresh);
 
 	const cardClick = () => {
 		saveMainPageScrollPosition();
@@ -71,7 +75,11 @@ function ServerCardInline({
 					className={cn("grid items-center gap-2 lg:w-36")}
 					style={{ gridTemplateColumns: "auto auto 1fr" }}
 				>
-					<span className="h-2 w-2 shrink-0 rounded-full bg-green-500 self-center"></span>
+					<span
+						role="img"
+						aria-label={statusText}
+						className="h-2 w-2 shrink-0 rounded-full bg-green-500 self-center"
+					/>
 					<div
 						className={cn(
 							"flex items-center justify-center",
@@ -212,7 +220,14 @@ function ServerCardInline({
 				className={cn("grid items-center gap-2 w-40")}
 				style={{ gridTemplateColumns: "auto auto 1fr" }}
 			>
-				<span className="h-2 w-2 shrink-0 rounded-full bg-red-500 self-center"></span>
+				<span
+					role="img"
+					aria-label={statusText}
+					className={cn(
+						"h-2 w-2 shrink-0 rounded-full self-center",
+						status === "offline" ? "bg-red-500" : "bg-amber-500",
+					)}
+				/>
 				<div
 					className={cn(
 						"flex items-center justify-center",
@@ -230,6 +245,9 @@ function ServerCardInline({
 					>
 						{name}
 					</p>
+					<span className="text-[11px] text-muted-foreground">
+						{statusText}
+					</span>
 					{parsedData?.billingDataMod && (
 						<BillingInfo parsedData={parsedData} />
 					)}

@@ -1,6 +1,35 @@
 import type { DomesticSnapshot, Row } from "@/hooks/use-domestic-probes";
-import type { MetricDataPoint, NezhaServer } from "@/types/nezha-api";
+import type {
+	MetricDataPoint,
+	NezhaServer,
+	NezhaWebsocketResponse,
+} from "@/types/nezha-api";
 import { nodeIsOnline } from "./server-location";
+
+export const nodeStateLabels = {
+	online: "在线",
+	offline: "离线",
+	pending: "等待上报",
+	updating: "更新中",
+};
+
+export function monitoringTime(
+	data: NezhaWebsocketResponse | null,
+	connected: boolean,
+	receivedAt: number | null | undefined,
+	clock: number,
+) {
+	const elapsed = receivedAt == null ? 0 : clock - receivedAt;
+	return {
+		now: data ? data.now + Math.max(0, elapsed) : clock,
+		fresh:
+			connected &&
+			!!data &&
+			receivedAt !== null &&
+			elapsed >= -30000 &&
+			elapsed < 30000,
+	};
+}
 
 export function nodeState(server: NezhaServer, now: number, fresh: boolean) {
 	if (!fresh) return "updating";

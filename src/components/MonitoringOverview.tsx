@@ -3,19 +3,19 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import type { DomesticSnapshot } from "@/hooks/use-domestic-probes";
 import { formatBytes } from "@/lib/format";
-import { currentCarrierRows, nodeState, usagePercent } from "@/lib/monitoring";
+import {
+	currentCarrierRows,
+	nodeState,
+	nodeStateLabels,
+	usagePercent,
+} from "@/lib/monitoring";
 import type { HealthIssue } from "@/lib/node-health";
 import { serverLocation } from "@/lib/server-location";
 import type { NezhaServer } from "@/types/nezha-api";
 import { regionName } from "./RegionSummary";
 import StatusHistory, { type ReportingFeed } from "./StatusHistory";
 
-const stateLabels = {
-	online: "在线",
-	offline: "离线",
-	pending: "等待上报",
-	updating: "更新中",
-};
+const stateLabels = nodeStateLabels;
 function Resource({
 	label,
 	percent,

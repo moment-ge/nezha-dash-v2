@@ -4,6 +4,8 @@ import type { NezhaWebsocketResponse } from "@/types/nezha-api";
 export interface WebSocketContextType {
 	lastData: NezhaWebsocketResponse | null;
 	connected: boolean;
+	receivedAt?: number | null;
+	clock?: number;
 	messageHistory: NezhaWebsocketResponse[];
 	reconnect: () => void;
 	needReconnect: boolean;

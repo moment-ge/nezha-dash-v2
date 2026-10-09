@@ -2,6 +2,7 @@ import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import useTooltip from "@/hooks/use-tooltip";
+import { nodeStateLabels } from "@/lib/monitoring";
 import { saveMainPageScrollPosition } from "@/lib/navigation";
 
 const MapTooltip = memo(function MapTooltip() {
@@ -60,7 +61,13 @@ const MapTooltip = memo(function MapTooltip() {
 						}}
 					>
 						<span
-							className={`h-1.5 w-1.5 shrink-0 rounded-full ${server.status ? "bg-green-500" : "bg-red-500"}`}
+							role="img"
+							aria-label={
+								nodeStateLabels[
+									server.state || (server.status ? "online" : "offline")
+								]
+							}
+							className={`h-1.5 w-1.5 shrink-0 rounded-full ${server.state === "pending" || server.state === "updating" ? "bg-amber-500" : server.status ? "bg-green-500" : "bg-red-500"}`}
 						/>
 						<span className="text-xs">{server.name}</span>
 					</button>

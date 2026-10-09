@@ -8,6 +8,7 @@ export interface TooltipData {
 		id: number;
 		name: string;
 		status: boolean;
+		state?: "online" | "offline" | "pending" | "updating";
 	}>;
 }
 

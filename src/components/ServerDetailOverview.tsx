@@ -8,7 +8,7 @@ import { ServerDetailLoading } from "@/components/loading/ServerDetailLoading";
 import ServerFlag from "@/components/ServerFlag";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { useWebSocketContext } from "@/hooks/use-websocket-context";
+import { useLiveStatus } from "@/hooks/use-live-status";
 import { formatBytes } from "@/lib/format";
 import { cn, formatNezhaInfo } from "@/lib/utils";
 import NumericText from "./NumericText";
@@ -48,7 +48,7 @@ export default function ServerDetailOverview({
 		};
 	}, []);
 
-	const { lastData, connected } = useWebSocketContext();
+	const { lastData, connected, now, fresh } = useLiveStatus();
 
 	if (!connected && !lastData) {
 		return <ServerDetailLoading />;
@@ -77,6 +77,8 @@ export default function ServerDetailOverview({
 	const {
 		name,
 		online,
+		status,
+		statusText,
 		uptime,
 		version,
 		arch,
@@ -94,7 +96,7 @@ export default function ServerDetailOverview({
 		net_in_transfer,
 		last_active_time_string,
 		boot_time_string,
-	} = formatNezhaInfo(nezhaWsData.now, server);
+	} = formatNezhaInfo(now, server, fresh);
 
 	const customBackgroundImage =
 		(window.CustomBackgroundImage as string) !== ""
@@ -128,11 +130,17 @@ export default function ServerDetailOverview({
 									"text-[9px] rounded-[6px] w-fit px-1 py-0 -mt-[0.3px] dark:text-white",
 									{
 										" bg-green-800": online,
-										" bg-red-600": !online,
+										" bg-red-600": status === "offline",
+										"bg-amber-600":
+											status === "pending" || status === "updating",
 									},
 								)}
 							>
-								{online ? t("serverDetail.online") : t("serverDetail.offline")}
+								{status === "online"
+									? t("serverDetail.online")
+									: status === "offline"
+										? t("serverDetail.offline")
+										: statusText}
 							</Badge>
 						</section>
 					</CardContent>

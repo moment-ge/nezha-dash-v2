@@ -2,7 +2,7 @@ import { lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 import type { DomesticSnapshot } from "@/hooks/use-domestic-probes";
 import { formatBytes } from "@/lib/format";
-import { nodeState } from "@/lib/monitoring";
+import { nodeState, nodeStateLabels } from "@/lib/monitoring";
 import { type HealthIssue, nodeHealth } from "@/lib/node-health";
 import type { NezhaServer } from "@/types/nezha-api";
 import MonitoringOverview from "./MonitoringOverview";
@@ -16,12 +16,7 @@ export { nodeState } from "@/lib/monitoring";
 const MonitoringHistory = lazy(() => import("./MonitoringHistory"));
 const DomesticNetworkChart = lazy(() => import("./DomesticNetworkChart"));
 
-const labels = {
-	online: "在线",
-	offline: "离线",
-	pending: "等待上报",
-	updating: "更新中",
-};
+const labels = nodeStateLabels;
 function StatusSymbol({ state }: { state: keyof typeof labels }) {
 	return (
 		<span aria-hidden="true" className={`status-symbol status-symbol-${state}`}>

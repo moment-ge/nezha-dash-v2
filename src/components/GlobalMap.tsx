@@ -3,12 +3,12 @@ import { useMemo } from "react";
 import useTooltip from "@/hooks/use-tooltip";
 import { geoJsonString } from "@/lib/geo-json-string";
 import { countryCoordinates } from "@/lib/geo-limit";
+import { nodeState } from "@/lib/monitoring";
 import { serverLocation } from "@/lib/server-location";
-import { cn, formatNezhaInfo } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import type { NezhaServer } from "@/types/nezha-api";
-
-import RegionSummary from "./RegionSummary";
 import MapTooltip from "./MapTooltip";
+import RegionSummary from "./RegionSummary";
 
 const geoJson = JSON.parse(geoJsonString) as {
 	features: Array<{
@@ -30,14 +30,17 @@ type TooltipServer = {
 	id: number;
 	name: string;
 	status: boolean;
+	state?: ReturnType<typeof nodeState>;
 };
 
 export default function GlobalMap({
 	serverList,
 	now,
+	fresh = true,
 }: {
 	serverList: NezhaServer[];
 	now: number;
+	fresh?: boolean;
 }) {
 	const { countryList, countryServers, serverCounts } = useMemo(() => {
 		const countryList: string[] = [];
@@ -56,12 +59,13 @@ export default function GlobalMap({
 			countryServers[countryCode].push({
 				id: server.id,
 				name: server.name,
-				status: formatNezhaInfo(now, server).online,
+				status: nodeState(server, now, fresh) === "online",
+				state: nodeState(server, now, fresh),
 			});
 		});
 
 		return { countryList, countryServers, serverCounts };
-	}, [now, serverList]);
+	}, [now, fresh, serverList]);
 
 	const customBackgroundImage =
 		(window.CustomBackgroundImage as string) !== ""
