@@ -123,6 +123,22 @@ describe("consistent node status across original and new views", () => {
 			Socket.instance.close();
 		});
 		expectStatus("更新中", "更新中");
+		act(() => {
+			vi.advanceTimersByTime(3000);
+			Socket.instance.open();
+		});
+		expectStatus("更新中", "更新中");
+		act(() => {
+			Socket.instance.message({
+				now: serverNow + 33000,
+				servers: [
+					createServer({
+						last_active: new Date(serverNow + 33000).toISOString(),
+					}),
+				],
+			});
+		});
+		expectStatus("在线", "serverDetail.online");
 	});
 	it("does not turn invalid or excessively future heartbeats into online nodes", () => {
 		const data = { now: serverNow, servers: [] };

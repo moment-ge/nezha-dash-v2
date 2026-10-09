@@ -99,6 +99,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
 			ws.current.onopen = () => {
 				console.log("WebSocket connected");
+				setReceivedAt(null);
 				setConnected(true);
 				reconnectAttempts.current = 0;
 				isConnecting.current = false;
